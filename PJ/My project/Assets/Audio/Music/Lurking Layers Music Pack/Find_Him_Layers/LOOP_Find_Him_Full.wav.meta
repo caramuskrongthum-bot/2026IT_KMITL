@@ -1,0 +1,29 @@
+fileFormatVersion: 2
+guid: 0e439fee677ec544bbbe87c17211fde2
+AudioImporter:
+  externalObjects: {}
+  serializedVersion: 6
+  defaultSettings:
+    loadType: 0
+    sampleRateSetting: 0
+    sampleRateOverride: 44100
+    compressionFormat: 1
+    quality: 1
+    conversionMode: 0
+  platformSettingOverrides: {}
+  forceToMono: 0
+  normalize: 1
+  preloadAudioData: 1
+  loadInBackground: 0
+  ambisonic: 0
+  3D: 1
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 265744
+  packageName: Lurking Layers Music Pack
+  packageVersion: 1.0
+  assetPath: Assets/Audio/Music/Lurking Layers Music Pack/Find_Him_Layers/LOOP_Find_Him_Full.wav
+  uploadId: 614258

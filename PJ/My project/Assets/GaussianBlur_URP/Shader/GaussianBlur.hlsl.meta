@@ -1,0 +1,16 @@
+fileFormatVersion: 2
+guid: 4f6349d8fcba5d348b705be6e4c22a2f
+ShaderImporter:
+  externalObjects: {}
+  defaultTextures: []
+  nonModifiableTextures: []
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 145889
+  packageName: GaussianBlur_URP
+  packageVersion: 2.1
+  assetPath: Assets/GaussianBlur_URP/Shader/GaussianBlur.hlsl
+  uploadId: 646900

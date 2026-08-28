@@ -1,0 +1,15 @@
+fileFormatVersion: 2
+guid: 64ab49e2278d82b4cb40f76803c677c8
+NativeFormatImporter:
+  externalObjects: {}
+  mainObjectFileID: 8400000
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 145889
+  packageName: GaussianBlur_URP
+  packageVersion: 2.1
+  assetPath: Assets/GaussianBlur_URP/Demo_Basic/Misc/RenderTexture.renderTexture
+  uploadId: 646900

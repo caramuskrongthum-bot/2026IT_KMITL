@@ -1,0 +1,16 @@
+fileFormatVersion: 2
+guid: 0977d67c4b40d1b49972376ed79b3bdb
+ShaderImporter:
+  externalObjects: {}
+  defaultTextures: []
+  nonModifiableTextures: []
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 145889
+  packageName: GaussianBlur_URP
+  packageVersion: 2.1
+  assetPath: Assets/GaussianBlur_URP/Shader/KawaseBlur.hlsl
+  uploadId: 646900

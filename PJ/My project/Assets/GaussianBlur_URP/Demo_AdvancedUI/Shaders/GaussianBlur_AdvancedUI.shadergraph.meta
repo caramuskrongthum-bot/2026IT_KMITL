@@ -1,0 +1,17 @@
+fileFormatVersion: 2
+guid: 5726a42873dbdec48a8e12c3d8f484c8
+ScriptedImporter:
+  internalIDToNameTable: []
+  externalObjects: {}
+  serializedVersion: 2
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+  script: {fileID: 11500000, guid: 625f186215c104763be7675aa2d941aa, type: 3}
+AssetOrigin:
+  serializedVersion: 1
+  productId: 145889
+  packageName: GaussianBlur_URP
+  packageVersion: 2.1
+  assetPath: Assets/GaussianBlur_URP/Demo_AdvancedUI/Shaders/GaussianBlur_AdvancedUI.shadergraph
+  uploadId: 646900

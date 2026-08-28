@@ -1,0 +1,16 @@
+fileFormatVersion: 2
+guid: 4baaeace5d10e764dafbb1f4b3d26148
+ShaderImporter:
+  externalObjects: {}
+  defaultTextures: []
+  nonModifiableTextures: []
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 145889
+  packageName: GaussianBlur_URP
+  packageVersion: 2.1
+  assetPath: Assets/GaussianBlur_URP/Shader/BlurScale.hlsl
+  uploadId: 646900

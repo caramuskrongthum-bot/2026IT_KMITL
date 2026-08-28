@@ -1,0 +1,9 @@
+fileFormatVersion: 2
+guid: 2239a12b988c437468ff34cd02783f78
+AssetOrigin:
+  serializedVersion: 1
+  productId: 262457
+  packageName: 'Toon Detailer: Cavity & Contours'
+  packageVersion: 2.2
+  assetPath: Assets/INab Studio/Post Processing Assets/Toon Detailer/Core URP 6/Scripts/DepthMaskPass.cs
+  uploadId: 864442

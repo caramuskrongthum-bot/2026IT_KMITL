@@ -1,0 +1,16 @@
+fileFormatVersion: 2
+guid: 57789cd1eba967642ba3a181c419c609
+NativeFormatImporter:
+  externalObjects: {}
+  mainObjectFileID: 11400000
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 262457
+  packageName: 'Toon Detailer: Cavity & Contours'
+  packageVersion: 2.2
+  assetPath: Assets/INab Studio/Post Processing Assets/Toon Detailer/Core URP 6/INab
+    Studio Volume.asset
+  uploadId: 864442
