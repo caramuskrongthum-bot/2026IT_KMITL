@@ -12,6 +12,7 @@ TagManager:
   - FxTemporaire
   - SwordHitBox
   - Alert_Manager
+  - LaserTarget
   layers:
   - Default
   - TransparentFX

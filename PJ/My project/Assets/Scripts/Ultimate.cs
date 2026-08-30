@@ -1,6 +1,7 @@
 ﻿using UnityEngine;
 using UnityEngine.UI;
 using UnityEngine.Events;
+using TMPro;
 public class Ultimate : MonoBehaviour
 {
     [Header("Detection Settings")]
@@ -25,6 +26,7 @@ public class Ultimate : MonoBehaviour
     private bool isInsideTrigger = false;
     private bool isTimerFinished = false;
 
+    public TextMeshProUGUI TexttimeRemaining;
     private void Start()
     {
         if (valueSlider != null)
@@ -67,6 +69,7 @@ public class Ultimate : MonoBehaviour
             isTimerFinished = true;
             EvaluateFinalValue();
         }
+        TexttimeRemaining.text = timeRemaining.ToString();
     }
 
     private void OnTriggerEnter(Collider other)
@@ -92,14 +95,26 @@ public class Ultimate : MonoBehaviour
         // เช็กเงื่อนไขตามลำดับจากน้อยไปมาก
         if (finalValue < 30)
         {
+            PlayerStatus P = GameObject.FindGameObjectWithTag("Player").GetComponent<PlayerStatus>();
+            Game_Score_Manager A = GameObject.FindGameObjectWithTag("Alert_Manager").GetComponent<Game_Score_Manager>();
+            A.Get_Score("-2 Heart!");
+            P.Player_Got_Damage(2);
             EventUnity30?.Invoke();
         }
         else if (finalValue < 50)
         {
+            PlayerStatus P = GameObject.FindGameObjectWithTag("Player").GetComponent<PlayerStatus>();
+            Game_Score_Manager A = GameObject.FindGameObjectWithTag("Alert_Manager").GetComponent<Game_Score_Manager>();
+            A.Get_Score("-1 Heart!");
+            P.Player_Got_Damage(1);
             EventUnity50?.Invoke();
         }
         else if (finalValue < 80)
         {
+            PlayerStatus P = GameObject.FindGameObjectWithTag("Player").GetComponent<PlayerStatus>();
+            Game_Score_Manager A = GameObject.FindGameObjectWithTag("Alert_Manager").GetComponent<Game_Score_Manager>();
+            A.Get_Score("+1 Heart!");
+            P.Player_Got_Damage(-1);
             EventUnity80?.Invoke();
         }
     }

@@ -1,7 +1,9 @@
 using System.IO;
 using System.Runtime.InteropServices;
 using UnityEngine;
+using UnityEngine.Events;
 using UnityEngine.SceneManagement;
+using UnityEngine.UI; // เพิ่ม namespace สำหรับ UI
 
 public class PhoneSensorSender : MonoBehaviour
 {
@@ -10,18 +12,19 @@ public class PhoneSensorSender : MonoBehaviour
 
     public enum AxisSource { Zero, RotX, RotY, RotZ }
 
-    // ================== SINGLETON ==================
     public static PhoneSensorSender Instance { get; private set; }
 
     [Header("Scene Re-binding")]
-    [Tooltip("Tag ของ Transform ไม้/ดาบ ที่ต้องมีอยู่ใน Scene ปัจจุบัน (ปล่อยว่างได้ถ้า Scene นั้นไม่มี)")]
     public string racketTag = "ItemTarget";
-    [Tooltip("Tag ของ Transform ตัวละคร ที่ต้องมีอยู่ใน Scene ปัจจุบัน (ปล่อยว่างได้ถ้า Scene นั้นไม่มี)")]
     public string playerTag = "PlayerTarget";
+    [Tooltip("Tag ของ RawImage เลเซอร์ (กรณีต้องการให้ค้นหาอัตโนมัติ)")]
+    public string laserTag = "LaserTarget";
 
-    [Header("References (จะถูกหาใหม่อัตโนมัติทุกครั้งที่เปลี่ยน Scene)")]
+    [Header("References")]
     public Transform racketTransform;
     public Transform playerTransform;
+    [Tooltip("ใส่ RectTransform ของ RawImage ที่ต้องการใช้เป็นแสงเลเซอร์")]
+    public RectTransform laserRawImage;
 
     [Header("Player Movement Settings (Joystick)")]
     public float moveSpeed = 5.0f;
@@ -35,23 +38,27 @@ public class PhoneSensorSender : MonoBehaviour
     [Range(0f, 5f)] public float yAxisMultiplier = 1.0f;
     [Range(0f, 5f)] public float zAxisMultiplier = 1.0f;
 
-    [Header("Drift Correction & Smoothing (แก้แกนเบี้ยว)")]
+    [Header("Drift Correction & Smoothing")]
     public bool autoCenter = true;
     [Range(0.1f, 5.0f)] public float autoCenterSpeed = 1.5f;
     [Range(5f, 30f)] public float smoothingSpeed = 15.0f;
 
-    // ================== NEW: POSITION TILT SETTINGS ==================
-    [Header("Item Position Sliding (เอียงแล้วเลื่อน ซ้าย-ขวา)")]
-    [Tooltip("เปิดใช้งานการเลื่อนตำแหน่ง X ของ ItemTarget ตามการเอียงมือถือ")]
+    [Header("Item Position Sliding")]
     public bool enablePositionSlide = true;
-    [Tooltip("แกน Gyro ที่จะใช้อ้างอิงการเอียงซ้าย-ขวา (ปกติจะใช้ RotZ หรือ RotY)")]
     public AxisSource tiltAxisSource = AxisSource.RotZ;
-    [Tooltip("ความไวในการเลื่อนตำแหน่ง")]
     public float positionSensitivity = 0.05f;
-    [Tooltip("ระยะการเลื่อนซ้าย-ขวาสุดจากจุดเริ่มต้น (Local Space)")]
     public float maxPositionOffset = 1.5f;
-    [Tooltip("การกลับทิศการเลื่อน (-1 หรือ 1)")]
     public float invertPosition = -1f;
+
+    // ================== NEW: LASER POINTER SETTINGS ==================
+    [Header("Laser Pointer (RawImage Screen Movement)")]
+    public bool enableLaserPointer = true;
+    public AxisSource laserXAxis = AxisSource.RotY; // แกนหมุนมือถือที่จะให้เลื่อซ้าย-ขวา
+    public AxisSource laserYAxis = AxisSource.RotX; // แกนหมุนมือถือที่จะให้เลื่อนขึ้น-ลง
+    public float laserSensitivity = 500f;           // ความไวการเคลื่อนที่จุดเลเซอร์ (Pixels)
+    public Vector2 laserScreenBounds = new Vector2(960f, 540f); // ขอบเขตการวิ่ง (ครึ่งหนึ่งของ Screen Resolution)
+    public float laserInvertX = 1f;
+    public float laserInvertY = 1f;
 
     [Header("Controller & Server Settings")]
     public string controllerBaseUrl = "https://your-domain.com/controller.html";
@@ -66,15 +73,16 @@ public class PhoneSensorSender : MonoBehaviour
     public float invertY = 1f;
     public float invertZ = -1f;
 
-    // --- Rotation variables ---
+    // --- Rotation & Position variables ---
     private Quaternion initialRacketRotation;
     private Quaternion targetRacketRotation;
-
-    // --- NEW: Position variables ---
     private Vector3 initialRacketPosition;
     private Vector3 targetRacketPosition;
 
-    // Vector2 สำหรับเก็บทิศทางการเดินจาก Joystick
+    // --- NEW: Laser variables ---
+    private Vector2 targetLaserPosition;
+    private Vector2 initialLaserPosition;
+
     private Vector2 currentJoystickInput = Vector2.zero;
     private LocalPhoneServer _localServer;
 
@@ -82,7 +90,11 @@ public class PhoneSensorSender : MonoBehaviour
     public string UniqueGameId { get; private set; }
     public string FullControllerUrl { get; private set; }
 
-    public GameObject ScanUi;
+    public UnityEvent UnityEvent_Scaned;
+
+    [Header("Deadzone / Threshold Settings")]
+    [Tooltip("ค่าการหมุนขั้นต่ำที่ต้องข้ามผ่านก่อนที่ Object จะหมุนตาม (ช่วยกันมือสั่น)")]
+    public float rotationThreshold = 0.05f;
     void Awake()
     {
         if (Instance != null && Instance != this)
@@ -115,6 +127,7 @@ public class PhoneSensorSender : MonoBehaviour
     {
         racketTransform = null;
         playerTransform = null;
+        laserRawImage = null;
 
         if (!string.IsNullOrEmpty(racketTag))
         {
@@ -128,14 +141,32 @@ public class PhoneSensorSender : MonoBehaviour
             if (playerObj != null) playerTransform = playerObj.transform;
         }
 
+        // NEW: Automatic laser rebind by tag
+        if (!string.IsNullOrEmpty(laserTag))
+        {
+            GameObject laserObj = GameObject.FindGameObjectWithTag(laserTag);
+            if (laserObj != null) laserRawImage = laserObj.GetComponent<RectTransform>();
+        }
+
+        InitPositions();
+    }
+
+    private void InitPositions()
+    {
         if (racketTransform != null)
         {
             initialRacketRotation = racketTransform.localRotation;
             targetRacketRotation = initialRacketRotation;
 
-            // NEW: บันทึกตำแหน่งเริ่มต้นในระดับ Local Space
             initialRacketPosition = racketTransform.localPosition;
             targetRacketPosition = initialRacketPosition;
+        }
+
+        // NEW: Laser initial state
+        if (laserRawImage != null)
+        {
+            initialLaserPosition = laserRawImage.anchoredPosition;
+            targetLaserPosition = initialLaserPosition;
         }
     }
 
@@ -143,14 +174,7 @@ public class PhoneSensorSender : MonoBehaviour
     {
         if (IsServerReady) return;
 
-        if (racketTransform != null)
-        {
-            initialRacketRotation = racketTransform.localRotation;
-            targetRacketRotation = initialRacketRotation;
-
-            initialRacketPosition = racketTransform.localPosition;
-            targetRacketPosition = initialRacketPosition;
-        }
+        InitPositions();
 
 #if UNITY_WEBGL && !UNITY_EDITOR
         FullControllerUrl = controllerBaseUrl + "?gameId=" + UniqueGameId;
@@ -193,22 +217,27 @@ public class PhoneSensorSender : MonoBehaviour
         }
 #endif
 
-        // --- 1. ระบบควบคุมการหมุน และการเลื่อนตำแหน่งไม้/ดาบ ---
+        // 1. ควบคุม Item / Racket
         if (racketTransform != null)
         {
             if (autoCenter)
             {
-                // Auto-center ทั้งการหมุนและตำแหน่ง
                 targetRacketRotation = Quaternion.Slerp(targetRacketRotation, initialRacketRotation, Time.deltaTime * autoCenterSpeed);
                 targetRacketPosition = Vector3.Lerp(targetRacketPosition, initialRacketPosition, Time.deltaTime * autoCenterSpeed);
             }
 
-            // Smooth Interpolation
             racketTransform.localRotation = Quaternion.Slerp(racketTransform.localRotation, targetRacketRotation, Time.deltaTime * smoothingSpeed);
             racketTransform.localPosition = Vector3.Lerp(racketTransform.localPosition, targetRacketPosition, Time.deltaTime * smoothingSpeed);
         }
 
-        // --- 2. ระบบบังคับตัวละครเดินจาก Joystick ---
+        // 2. ควบคุมเลื่อน RawImage (Laser Pointer) - ตัดการ autoCenter ออก
+        if (enableLaserPointer && laserRawImage != null)
+        {
+            // ลบเงื่อนไข autoCenter ของ laser ออก เพื่อให้ cursor ค้างอยู่ที่ตำแหน่งล่าสุดเสมอ
+            laserRawImage.anchoredPosition = Vector2.Lerp(laserRawImage.anchoredPosition, targetLaserPosition, Time.deltaTime * smoothingSpeed);
+        }
+
+        // 3. ควบคุมตัวละคร
         MovePlayer();
     }
 
@@ -225,10 +254,22 @@ public class PhoneSensorSender : MonoBehaviour
 
     public void OnReceiveMotionData(string data)
     {
-        if (ScanUi != null)
+        if (data == "ACTION_CLICK")
         {
-            ScanUi.SetActive(false);
+            Debug.Log("🎯 [PhoneSensorSender] ได้รับสัญญาณ ACTION_CLICK จากมือถือ");
+
+            // ค้นหา PhoneButtonListener ในฉาก แล้วสั่งให้ทำงาน
+            PhoneButtonListener listener = FindObjectOfType<PhoneButtonListener>();
+            if (listener != null)
+            {
+                listener.HandleButtonClick();
+            }
+            return;
         }
+
+        // --- 2. การทำงานดั้งเดิมของคุณ ---
+        UnityEvent_Scaned.Invoke();
+
         string[] values = data.Split(',');
         if (values.Length >= 5)
         {
@@ -236,13 +277,19 @@ public class PhoneSensorSender : MonoBehaviour
                 float.TryParse(values[1], out float gy) &&
                 float.TryParse(values[2], out float gz))
             {
+                // 1. นำค่าเซนเซอร์มากรองด้วย Threshold ก่อนนำไปคำนวณต่อ
+                float filteredGx = ApplyThreshold(gx);
+                float filteredGy = ApplyThreshold(gy);
+                float filteredGz = ApplyThreshold(gz);
+
+                // 2. คำนวณความเร็วตามแกนที่กรองค่าแล้ว
+                float rotX = filteredGx * sensitivity * Time.deltaTime * invertX;
+                float rotY = filteredGy * sensitivity * Time.deltaTime * invertY;
+                float rotZ = filteredGz * sensitivity * Time.deltaTime * invertZ;
+
+                // --- คำนวณ 3D Racket ---
                 if (racketTransform != null)
                 {
-                    float rotX = gx * sensitivity * Time.deltaTime * invertX;
-                    float rotY = gy * sensitivity * Time.deltaTime * invertY;
-                    float rotZ = gz * sensitivity * Time.deltaTime * invertZ;
-
-                    // --- คำนวณการหมุน (Rotation) ---
                     float rawX = GetAxisValue(xAxisSource, rotX, rotY, rotZ);
                     float rawY = GetAxisValue(yAxisSource, rotX, rotY, rotZ);
                     float rawZ = GetAxisValue(zAxisSource, rotX, rotY, rotZ);
@@ -254,16 +301,12 @@ public class PhoneSensorSender : MonoBehaviour
                     Quaternion deltaRotation = Quaternion.Euler(finalX, finalY, finalZ);
                     targetRacketRotation = targetRacketRotation * deltaRotation;
 
-                    // --- NEW: คำนวณการเลื่อนตำแหน่ง ซ้าย-ขวา (Position Slide) ---
                     if (enablePositionSlide)
                     {
                         float tiltValue = GetAxisValue(tiltAxisSource, rotX, rotY, rotZ);
                         float offsetX = tiltValue * positionSensitivity * invertPosition;
 
-                        // เพิ่ม Offset เข้าไปที่แกน X (Local Position)
                         targetRacketPosition.x += offsetX;
-
-                        // Limit ไม่ให้เลื่อนเกินขอบเขตที่ตั้งไว้ (Clamping relative to initial position)
                         float clampedX = Mathf.Clamp(
                             targetRacketPosition.x,
                             initialRacketPosition.x - maxPositionOffset,
@@ -273,6 +316,19 @@ public class PhoneSensorSender : MonoBehaviour
                         targetRacketPosition = new Vector3(clampedX, targetRacketPosition.y, targetRacketPosition.z);
                     }
                 }
+
+                // --- คำนวณ 2D Laser Pointer (RawImage) ---
+                if (enableLaserPointer && laserRawImage != null)
+                {
+                    float rawLaserX = GetAxisValue(laserXAxis, rotX, rotY, rotZ) * laserInvertX;
+                    float rawLaserY = GetAxisValue(laserYAxis, rotX, rotY, rotZ) * laserInvertY;
+
+                    Vector2 laserDelta = new Vector2(rawLaserX, rawLaserY) * laserSensitivity;
+                    targetLaserPosition += laserDelta;
+
+                    targetLaserPosition.x = Mathf.Clamp(targetLaserPosition.x, -laserScreenBounds.x, laserScreenBounds.x);
+                    targetLaserPosition.y = Mathf.Clamp(targetLaserPosition.y, -laserScreenBounds.y, laserScreenBounds.y);
+                }
             }
 
             if (float.TryParse(values[3], out float jx) &&
@@ -281,6 +337,16 @@ public class PhoneSensorSender : MonoBehaviour
                 currentJoystickInput = new Vector2(jx, jy);
             }
         }
+    }
+    // ฟังก์ชันช่วยตัดค่าที่ต่ำกว่า Threshold ให้กลายเป็น 0
+    private float ApplyThreshold(float inputVal)
+    {
+        if (Mathf.Abs(inputVal) < rotationThreshold)
+        {
+            return 0f;
+        }
+        // หักลบค่า threshold ออกเล็กน้อยเพื่อไม่ให้ค่ากระตุกกระทันหันตอนข้าม threshold
+        return Mathf.Sign(inputVal) * (Mathf.Abs(inputVal) - rotationThreshold);
     }
 
     private float GetAxisValue(AxisSource source, float rx, float ry, float rz)
