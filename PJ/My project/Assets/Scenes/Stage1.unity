@@ -9995,14 +9995,17 @@ MonoBehaviour:
   - {fileID: 1572129043}
   - {fileID: 1243947389}
   - {fileID: 655280674}
-  maxAlien: 5
+  maxAlien: 10
   maxActiveEnemies: 1
   delayBeforeNextSpawn: 0.5
   AS: {fileID: 565719782}
   AC:
-  - {fileID: 0}
-  - {fileID: 0}
-  - {fileID: 0}
+  - {fileID: 8300000, guid: 8bf717b2b03867f40b43cf6ee244cbd6, type: 3}
+  - {fileID: 8300000, guid: 8bf717b2b03867f40b43cf6ee244cbd6, type: 3}
+  - {fileID: 8300000, guid: 39a90b61e4992da4787398f5edb4ed6e, type: 3}
+  - {fileID: 8300000, guid: 4d3d26f5cf87c5047b023b091b735f52, type: 3}
+  - {fileID: 8300000, guid: 361350d2d2065a048a479134032bff9d, type: 3}
+  ACBG: {fileID: 8300000, guid: 22264ea0ac58f7d4182421635698a3ef, type: 3}
   IndexAC: 0
   Clear_All_Alien:
     m_PersistentCalls:
@@ -19158,7 +19161,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 0
+  m_IsActive: 1
 --- !u!4 &1257916017
 Transform:
   m_ObjectHideFlags: 0

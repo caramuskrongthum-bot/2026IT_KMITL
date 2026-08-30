@@ -599,7 +599,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 71c6b7019286ae1429888f07c46be9fc, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::Enemy
-  moveSpeed: 4
+  moveSpeed: 8
   knockbackForce: 8
   jumpUpForce: 3
   knockbackStunDuration: 0.3

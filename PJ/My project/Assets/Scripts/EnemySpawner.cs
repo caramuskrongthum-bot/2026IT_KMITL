@@ -24,6 +24,7 @@ public class EnemySpawner : MonoBehaviour
     [Header("Audio Settings")]
     public AudioSource AS;
     public AudioClip[] AC;
+    public AudioClip ACBG;
     public int IndexAC;
 
     [Header("Events")]
@@ -31,7 +32,7 @@ public class EnemySpawner : MonoBehaviour
     public UnityEvent Clear_All_Alien;
 
     private int spawnedCount = 0;              // จำนวนที่เสกออกไปแล้วทั้งหมด
-    [HideInInspector] public int defeatedCount = 0; // จำนวนที่ถูกกำจัดไปแล้ว
+    public int defeatedCount = 0; // จำนวนที่ถูกกำจัดไปแล้ว
     private int currentActiveEnemies = 0;     // จำนวนศัตรูที่ยังคงมีชีวิตอยู่ในฉากขณะนี้
 
     private void Start()
@@ -136,7 +137,19 @@ public class EnemySpawner : MonoBehaviour
     /// </summary>
     private void PlayDeathSound()
     {
-        IndexAC = Mathf.Clamp(IndexAC,0, AC.Length);
-        AS.PlayOneShot(AC[IndexAC]);
+        if (AS == null || AC == null || AC.Length == 0) return;
+
+        IndexAC++;
+        IndexAC = (int)Mathf.Repeat(IndexAC, AC.Length);
+
+        if (AC[IndexAC] != null)
+        {
+            AS.PlayOneShot(AC[IndexAC]);
+        }
+
+        if (ACBG != null)
+        {
+            AS.PlayOneShot(ACBG);
+        }
     }
 }
