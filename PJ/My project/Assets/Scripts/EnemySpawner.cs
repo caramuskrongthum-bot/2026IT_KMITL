@@ -6,8 +6,8 @@ using UnityEngine.Events;
 public class EnemySpawner : MonoBehaviour
 {
     [Header("Spawn Settings")]
-    [Tooltip("Prefab ของศัตรู")]
-    public GameObject enemyPrefab;
+    [Tooltip("รายการ Prefab ทั้งหมดของศัตรูที่จะใช้สุ่มเสก")]
+    public GameObject[] PrefabAllEnemy; // เปลี่ยนเป็น Array สำหรับเก็บศัตรูหลายประเภท
     [Tooltip("จุดเกิดของศัตรู")]
     public Transform[] spawnPoints;
 
@@ -31,8 +31,8 @@ public class EnemySpawner : MonoBehaviour
     [Tooltip("จะถูกเรียกเมื่อกำจัด Enemy ครบทั้งหมดในคิวเรียบร้อยแล้ว")]
     public UnityEvent Clear_All_Alien;
 
-    private int spawnedCount = 0;              // จำนวนที่เสกออกไปแล้วทั้งหมด
-    public int defeatedCount = 0; // จำนวนที่ถูกกำจัดไปแล้ว
+    private int spawnedCount = 0;             // จำนวนที่เสกออกไปแล้วทั้งหมด
+    public int defeatedCount = 0;            // จำนวนที่ถูกกำจัดไปแล้ว
     private int currentActiveEnemies = 0;     // จำนวนศัตรูที่ยังคงมีชีวิตอยู่ในฉากขณะนี้
 
     private void Start()
@@ -68,22 +68,38 @@ public class EnemySpawner : MonoBehaviour
     }
 
     /// <summary>
-    /// เสก Enemy 1 ตัวลงสนาม
+    /// เสก Enemy 1 ตัวลงสนาม (สุ่มแบบจาก PrefabAllEnemy)
     /// </summary>
     private void SpawnSingleEnemy()
     {
         if (spawnedCount >= maxAlien) return;
 
-        // 1. สุ่มจุดเกิด
+        // Safety Check: หากไม่มี Prefab ใน Array จะหยุดการทำงาน
+        if (PrefabAllEnemy == null || PrefabAllEnemy.Length == 0)
+        {
+            Debug.LogError("⚠️ [EnemySpawner] ยังไม่ได้ใส่ Prefab ใน PrefabAllEnemy!");
+            return;
+        }
+
+        // 1. สุ่มเลือก Prefab จาก PrefabAllEnemy
+        GameObject selectedPrefab = PrefabAllEnemy[Random.Range(0, PrefabAllEnemy.Length)];
+
+        if (selectedPrefab == null)
+        {
+            Debug.LogWarning("⚠️ [EnemySpawner] พบ Element ที่เป็น null ใน PrefabAllEnemy!");
+            return;
+        }
+
+        // 2. สุ่มจุดเกิด
         Transform spawnPoint = spawnPoints.Length > 0 ? spawnPoints[Random.Range(0, spawnPoints.Length)] : transform;
         Vector3 randomOffset = new Vector3(Random.Range(-0.5f, 0.5f), 0, Random.Range(-0.5f, 0.5f));
 
-        // 2. Instantiate Enemy
-        GameObject enemyObj = Instantiate(enemyPrefab, spawnPoint.position + randomOffset, spawnPoint.rotation);
+        // 3. Instantiate Enemy ที่สุ่มมาได้
+        GameObject enemyObj = Instantiate(selectedPrefab, spawnPoint.position + randomOffset, spawnPoint.rotation);
         spawnedCount++;
         currentActiveEnemies++;
 
-        // 3. ตรวจสอบคลังไอเทมขโมยใน LootManager
+        // 4. ตรวจสอบคลังไอเทมขโมยใน LootManager
         if (LootManager.Instance != null && LootManager.Instance.GetStolenItemCount() > 0)
         {
             ItemData stolenItem = LootManager.Instance.PopOneStolenItem();
@@ -94,9 +110,9 @@ public class EnemySpawner : MonoBehaviour
             }
         }
 
-        Debug.Log($"👾 Spawned Enemy #{spawnedCount}/{maxAlien} (Active in Scene: {currentActiveEnemies})");
+        Debug.Log($"👾 Spawned Enemy ({selectedPrefab.name}) #{spawnedCount}/{maxAlien} (Active in Scene: {currentActiveEnemies})");
 
-        // 4. เริ่ม Coroutine เฝ้ามองศัตรูตัวนี้
+        // 5. เริ่ม Coroutine เฝ้ามองศัตรูตัวนี้
         StartCoroutine(TrackEnemyDeath(enemyObj));
     }
 

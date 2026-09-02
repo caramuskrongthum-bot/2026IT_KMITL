@@ -127,7 +127,9 @@ MonoBehaviour:
   m_EditorClassIdentifier: '::'
   swordCollider: {fileID: 4863325556053193611}
   swingSpeedThreshold: 5
-  damageAmount: 100
+  maxSwingSpeed: 10
+  damageAmount: 50
+  maxSpeedBonusDamage: 20
   ImpactEffect: {fileID: 888444077320411739, guid: 0c2509361b13505428ce788b7f846686, type: 3}
 --- !u!1 &5134921737135296757
 GameObject:

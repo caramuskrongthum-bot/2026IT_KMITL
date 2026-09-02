@@ -281,7 +281,7 @@ Material:
     - _OutlineComp: 6
     - _OutlineGroup: 1
     - _OutlinePass: 2
-    - _OutlineWidth: 0.004
+    - _OutlineWidth: 0.0099
     - _OutlineWidthIndependent: 0
     - _OutlineZPos: 1
     - _Parallax: 0.005

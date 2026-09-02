@@ -3,7 +3,7 @@ using System.Runtime.InteropServices;
 using UnityEngine;
 using UnityEngine.Events;
 using UnityEngine.SceneManagement;
-using UnityEngine.UI; // เพิ่ม namespace สำหรับ UI
+using UnityEngine.UI;
 
 public class PhoneSensorSender : MonoBehaviour
 {
@@ -50,13 +50,12 @@ public class PhoneSensorSender : MonoBehaviour
     public float maxPositionOffset = 1.5f;
     public float invertPosition = -1f;
 
-    // ================== NEW: LASER POINTER SETTINGS ==================
     [Header("Laser Pointer (RawImage Screen Movement)")]
     public bool enableLaserPointer = true;
-    public AxisSource laserXAxis = AxisSource.RotY; // แกนหมุนมือถือที่จะให้เลื่อซ้าย-ขวา
-    public AxisSource laserYAxis = AxisSource.RotX; // แกนหมุนมือถือที่จะให้เลื่อนขึ้น-ลง
-    public float laserSensitivity = 500f;           // ความไวการเคลื่อนที่จุดเลเซอร์ (Pixels)
-    public Vector2 laserScreenBounds = new Vector2(960f, 540f); // ขอบเขตการวิ่ง (ครึ่งหนึ่งของ Screen Resolution)
+    public AxisSource laserXAxis = AxisSource.RotY;
+    public AxisSource laserYAxis = AxisSource.RotX;
+    public float laserSensitivity = 500f;
+    public Vector2 laserScreenBounds = new Vector2(960f, 540f);
     public float laserInvertX = 1f;
     public float laserInvertY = 1f;
 
@@ -73,13 +72,11 @@ public class PhoneSensorSender : MonoBehaviour
     public float invertY = 1f;
     public float invertZ = -1f;
 
-    // --- Rotation & Position variables ---
     private Quaternion initialRacketRotation;
     private Quaternion targetRacketRotation;
     private Vector3 initialRacketPosition;
     private Vector3 targetRacketPosition;
 
-    // --- NEW: Laser variables ---
     private Vector2 targetLaserPosition;
     private Vector2 initialLaserPosition;
 
@@ -95,6 +92,7 @@ public class PhoneSensorSender : MonoBehaviour
     [Header("Deadzone / Threshold Settings")]
     [Tooltip("ค่าการหมุนขั้นต่ำที่ต้องข้ามผ่านก่อนที่ Object จะหมุนตาม (ช่วยกันมือสั่น)")]
     public float rotationThreshold = 0.05f;
+
     void Awake()
     {
         if (Instance != null && Instance != this)
@@ -141,7 +139,6 @@ public class PhoneSensorSender : MonoBehaviour
             if (playerObj != null) playerTransform = playerObj.transform;
         }
 
-        // NEW: Automatic laser rebind by tag
         if (!string.IsNullOrEmpty(laserTag))
         {
             GameObject laserObj = GameObject.FindGameObjectWithTag(laserTag);
@@ -162,7 +159,6 @@ public class PhoneSensorSender : MonoBehaviour
             targetRacketPosition = initialRacketPosition;
         }
 
-        // NEW: Laser initial state
         if (laserRawImage != null)
         {
             initialLaserPosition = laserRawImage.anchoredPosition;
@@ -217,7 +213,6 @@ public class PhoneSensorSender : MonoBehaviour
         }
 #endif
 
-        // 1. ควบคุม Item / Racket
         if (racketTransform != null)
         {
             if (autoCenter)
@@ -230,14 +225,11 @@ public class PhoneSensorSender : MonoBehaviour
             racketTransform.localPosition = Vector3.Lerp(racketTransform.localPosition, targetRacketPosition, Time.deltaTime * smoothingSpeed);
         }
 
-        // 2. ควบคุมเลื่อน RawImage (Laser Pointer) - ตัดการ autoCenter ออก
         if (enableLaserPointer && laserRawImage != null)
         {
-            // ลบเงื่อนไข autoCenter ของ laser ออก เพื่อให้ cursor ค้างอยู่ที่ตำแหน่งล่าสุดเสมอ
             laserRawImage.anchoredPosition = Vector2.Lerp(laserRawImage.anchoredPosition, targetLaserPosition, Time.deltaTime * smoothingSpeed);
         }
 
-        // 3. ควบคุมตัวละคร
         MovePlayer();
     }
 
@@ -254,20 +246,37 @@ public class PhoneSensorSender : MonoBehaviour
 
     public void OnReceiveMotionData(string data)
     {
-        if (data == "ACTION_CLICK")
+        if (data.StartsWith("ACTION_"))
         {
-            Debug.Log("🎯 [PhoneSensorSender] ได้รับสัญญาณ ACTION_CLICK จากมือถือ");
+            Debug.Log($"🎯 [PhoneSensorSender] ได้รับสัญญาณ: {data}");
 
-            // ค้นหา PhoneButtonListener ในฉาก แล้วสั่งให้ทำงาน
+            if (data == "ACTION_CALIBRATE")
+            {
+                RecenterRacket();
+                return;
+            }
+
+            if (data == "ACTION_TOGGLE_AUTOCENTER")
+            {
+                ToggleAutoCenter();
+                return;
+            }
+
+            ControllerReceiver controller = FindObjectOfType<ControllerReceiver>();
+            if (controller != null)
+            {
+                controller.OnDataReceived(data);
+            }
+
             PhoneButtonListener listener = FindObjectOfType<PhoneButtonListener>();
             if (listener != null)
             {
                 listener.HandleButtonClick();
             }
+
             return;
         }
 
-        // --- 2. การทำงานดั้งเดิมของคุณ ---
         UnityEvent_Scaned.Invoke();
 
         string[] values = data.Split(',');
@@ -277,17 +286,14 @@ public class PhoneSensorSender : MonoBehaviour
                 float.TryParse(values[1], out float gy) &&
                 float.TryParse(values[2], out float gz))
             {
-                // 1. นำค่าเซนเซอร์มากรองด้วย Threshold ก่อนนำไปคำนวณต่อ
                 float filteredGx = ApplyThreshold(gx);
                 float filteredGy = ApplyThreshold(gy);
                 float filteredGz = ApplyThreshold(gz);
 
-                // 2. คำนวณความเร็วตามแกนที่กรองค่าแล้ว
                 float rotX = filteredGx * sensitivity * Time.deltaTime * invertX;
                 float rotY = filteredGy * sensitivity * Time.deltaTime * invertY;
                 float rotZ = filteredGz * sensitivity * Time.deltaTime * invertZ;
 
-                // --- คำนวณ 3D Racket ---
                 if (racketTransform != null)
                 {
                     float rawX = GetAxisValue(xAxisSource, rotX, rotY, rotZ);
@@ -317,7 +323,6 @@ public class PhoneSensorSender : MonoBehaviour
                     }
                 }
 
-                // --- คำนวณ 2D Laser Pointer (RawImage) ---
                 if (enableLaserPointer && laserRawImage != null)
                 {
                     float rawLaserX = GetAxisValue(laserXAxis, rotX, rotY, rotZ) * laserInvertX;
@@ -338,14 +343,47 @@ public class PhoneSensorSender : MonoBehaviour
             }
         }
     }
-    // ฟังก์ชันช่วยตัดค่าที่ต่ำกว่า Threshold ให้กลายเป็น 0
+
+    // ================== UTILITY METHODS FOR CALIBRATION ==================
+
+    /// <summary>
+    /// ตั้งค่าตำแหน่งและมุมหมุนของวัตถุและเลเซอร์กลับไปยังจุดเริ่มต้น
+    /// </summary>
+    public void RecenterRacket()
+    {
+        targetRacketRotation = initialRacketRotation;
+        targetRacketPosition = initialRacketPosition;
+        targetLaserPosition = initialLaserPosition;
+
+        if (racketTransform != null)
+        {
+            racketTransform.localRotation = initialRacketRotation;
+            racketTransform.localPosition = initialRacketPosition;
+        }
+
+        if (laserRawImage != null)
+        {
+            laserRawImage.anchoredPosition = initialLaserPosition;
+        }
+
+        TriggerVibrate();
+    }
+
+    /// <summary>
+    /// สลับสถานะการปรับสมดุลกึ่งกลางอัตโนมัติ (Auto Center)
+    /// </summary>
+    public void ToggleAutoCenter()
+    {
+        autoCenter = !autoCenter;
+        TriggerVibrate();
+    }
+
     private float ApplyThreshold(float inputVal)
     {
         if (Mathf.Abs(inputVal) < rotationThreshold)
         {
             return 0f;
         }
-        // หักลบค่า threshold ออกเล็กน้อยเพื่อไม่ให้ค่ากระตุกกระทันหันตอนข้าม threshold
         return Mathf.Sign(inputVal) * (Mathf.Abs(inputVal) - rotationThreshold);
     }
 

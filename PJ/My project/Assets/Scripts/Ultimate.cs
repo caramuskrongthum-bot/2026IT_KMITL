@@ -2,120 +2,104 @@
 using UnityEngine.UI;
 using UnityEngine.Events;
 using TMPro;
+
 public class Ultimate : MonoBehaviour
 {
-    [Header("Detection Settings")]
-    [SerializeField] private string targetTag = "Player";
-
     [Header("UI Elements")]
     [SerializeField] private Slider valueSlider;
+    public TextMeshProUGUI TexttimeRemaining;
 
-    [Header("Value & Speed Settings")]
-    [SerializeField] private float currentValue = 0f;
-    [SerializeField] private float increaseSpeed = 20f; // ความเร็วในการเพิ่มค่าต่อวินาที
-    [SerializeField] private float decreaseSpeed = 20f; // ความเร็วในการลดค่าต่อวินาที
-
-    [Header("Timer Settings")]
-    [SerializeField] private float timeRemaining = 30f; // เวลาทั้งหมด (วินาที)
+    float currentValue = 0f;
+    float valuePerHit = 10f;
+    int timeRemaining = 10;
 
     [Header("Unity Events")]
-    public UnityEvent EventUnity30; // ทำงานเมื่อเวลามด และ value < 30
-    public UnityEvent EventUnity50; // ทำงานเมื่อเวลาหมด และ value < 50 (และ >= 30)
-    public UnityEvent EventUnity80; // ทำงานเมื่อเวลาหมด และ value < 80 (และ >= 50)
+    public UnityEvent Bomb;
+    public UnityEvent Finish;
+    public UnityEvent GotAttack;
 
-    private bool isInsideTrigger = false;
     private bool isTimerFinished = false;
+    private float timer;
 
-    public TextMeshProUGUI TexttimeRemaining;
+    public GameObject Bomb_effect;
+
     private void Start()
     {
-        if (valueSlider != null)
-        {
-            valueSlider.minValue = 0f;
-            valueSlider.maxValue = 100f;
-            valueSlider.value = currentValue;
-        }
+        ResetUltimate();
     }
 
     private void Update()
     {
         if (isTimerFinished) return;
 
-        // 1. จัดการการเพิ่ม/ลด Value
-        if (isInsideTrigger)
+        // จัดการนับเวลาถอยหลัง
+        if (timer > 0)
         {
-            currentValue += increaseSpeed * Time.deltaTime;
+            timer -= Time.deltaTime;
+            UpdateTimerUI();
         }
         else
         {
-            currentValue -= decreaseSpeed * Time.deltaTime;
+            timer = 0;
+            isTimerFinished = true;
+            UpdateTimerUI();
+            EvaluateFinalValue();
         }
+    }
 
+    /// <summary>
+    /// เรียกใช้งานจาก SwordHitBox เมื่อฟันโดน Trigger 1 ครั้ง
+    /// </summary>
+    public void AddHitProgress()
+    {
+        if (isTimerFinished) return;
+
+        currentValue += valuePerHit;
         currentValue = Mathf.Clamp(currentValue, 0f, 100f);
-
+        GotAttack.Invoke();
         if (valueSlider != null)
         {
             valueSlider.value = currentValue;
         }
 
-        // 2. จัดการนับเวลาถอยหลัง
-        if (timeRemaining > 0)
+        if (currentValue >= 100f)
         {
-            timeRemaining -= Time.deltaTime;
-        }
-        else
-        {
-            timeRemaining = 0;
             isTimerFinished = true;
+            Finish.Invoke();
             EvaluateFinalValue();
         }
-        TexttimeRemaining.text = timeRemaining.ToString();
     }
 
-    private void OnTriggerEnter(Collider other)
+    public void ResetUltimate()
     {
-        if (other.CompareTag(targetTag))
+        timer = timeRemaining;
+        currentValue = 0f;
+        isTimerFinished = false;
+
+        if (valueSlider != null)
         {
-            isInsideTrigger = true;
+            valueSlider.minValue = 0f;
+            valueSlider.maxValue = 100f;
+            valueSlider.value = currentValue;
         }
+
+        UpdateTimerUI();
     }
 
-    private void OnTriggerExit(Collider other)
+    private void UpdateTimerUI()
     {
-        if (other.CompareTag(targetTag))
-        {
-            isInsideTrigger = false;
-        }
+        int displayTime = Mathf.CeilToInt(timer);
+        TexttimeRemaining.text = displayTime.ToString();
     }
 
     private void EvaluateFinalValue()
     {
         int finalValue = Mathf.RoundToInt(currentValue);
-
-        // เช็กเงื่อนไขตามลำดับจากน้อยไปมาก
-        if (finalValue < 30)
+        if (finalValue != 100)
         {
-            PlayerStatus P = GameObject.FindGameObjectWithTag("Player").GetComponent<PlayerStatus>();
-            Game_Score_Manager A = GameObject.FindGameObjectWithTag("Alert_Manager").GetComponent<Game_Score_Manager>();
-            A.Get_Score("-2 Heart!");
-            P.Player_Got_Damage(2);
-            EventUnity30?.Invoke();
-        }
-        else if (finalValue < 50)
-        {
-            PlayerStatus P = GameObject.FindGameObjectWithTag("Player").GetComponent<PlayerStatus>();
-            Game_Score_Manager A = GameObject.FindGameObjectWithTag("Alert_Manager").GetComponent<Game_Score_Manager>();
-            A.Get_Score("-1 Heart!");
-            P.Player_Got_Damage(1);
-            EventUnity50?.Invoke();
-        }
-        else if (finalValue < 80)
-        {
-            PlayerStatus P = GameObject.FindGameObjectWithTag("Player").GetComponent<PlayerStatus>();
-            Game_Score_Manager A = GameObject.FindGameObjectWithTag("Alert_Manager").GetComponent<Game_Score_Manager>();
-            A.Get_Score("+1 Heart!");
-            P.Player_Got_Damage(-1);
-            EventUnity80?.Invoke();
+            Bomb?.Invoke();
+            GameObject A = Instantiate(Bomb_effect);
+            A.transform.position = transform.position;
         }
     }
 }

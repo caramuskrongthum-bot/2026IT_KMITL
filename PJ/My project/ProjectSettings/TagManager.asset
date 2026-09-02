@@ -13,6 +13,7 @@ TagManager:
   - SwordHitBox
   - Alert_Manager
   - LaserTarget
+  - UltimateTarget
   layers:
   - Default
   - TransparentFX

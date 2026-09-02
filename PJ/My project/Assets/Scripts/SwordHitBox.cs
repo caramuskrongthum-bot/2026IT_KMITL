@@ -84,6 +84,48 @@ public class SwordHitBox : MonoBehaviour
 
     public void OnTriggerEnter(Collider other)
     {
+        // 1. ตรวจจับการฟันโดน Monster
+        if (other.CompareTag("Monster"))
+        {
+            Vector3 hitPoint = other.ClosestPoint(transform.position);
+            if (ImpactEffect != null)
+            {
+                Instantiate(ImpactEffect, hitPoint, Quaternion.identity);
+            }
+
+            Enemy enemy = other.GetComponent<Enemy>();
+            if (enemy != null)
+            {
+                float finalDamage = CalculateTotalDamage();
+                if (enemy.canDeadFromAttack)
+                {
+                    enemy.TakeDamage(finalDamage, transform.position);
+                }
+
+                PhoneSensorSender sender = FindObjectOfType<PhoneSensorSender>();
+                if (sender != null)
+                {
+                    sender.TriggerVibrate();
+                }
+            }
+        }
+
+        // 2. ตรวจจับการฟันโดน Target/Trigger ของ Ultimate
+        if (other.CompareTag("UltimateTarget")) // กำหนด Tag ของ Object ที่ติดสคริปต์ Ultimate ไว้
+        {
+            Ultimate ultimateTarget = other.GetComponent<Ultimate>();
+            if (ultimateTarget != null)
+            {
+                ultimateTarget.AddHitProgress(); // เรียกเพิ่มค่า 1 ครั้งต่อการเข้า Trigger
+
+                // สั่งสั่นมือถือเมื่อฟันโดน
+                PhoneSensorSender sender = FindObjectOfType<PhoneSensorSender>();
+                if (sender != null)
+                {
+                    sender.TriggerVibrate();
+                }
+            }
+        }
         if (other.CompareTag("Monster"))
         {
             Vector3 hitPoint = other.ClosestPoint(transform.position);
@@ -97,8 +139,10 @@ public class SwordHitBox : MonoBehaviour
             {
                 // คำนวณดาเมจรวมแบบไดนามิกตอนโจมตีโดน
                 float finalDamage = CalculateTotalDamage();
-
-                enemy.TakeDamage(finalDamage, transform.position);
+                if (enemy.canDeadFromAttack)
+                {
+                    enemy.TakeDamage(finalDamage, transform.position);
+                }
 
                 PhoneSensorSender sender = FindObjectOfType<PhoneSensorSender>();
                 if (sender != null)
@@ -107,6 +151,7 @@ public class SwordHitBox : MonoBehaviour
                 }
             }
         }
+
     }
 
     public void EnableHitBox()

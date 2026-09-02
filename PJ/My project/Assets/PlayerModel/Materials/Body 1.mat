@@ -27,6 +27,7 @@ Material:
   m_ValidKeywords:
   - AMBIENT
   - ANIME_SOFT
+  - CUTOUT
   - DIFFUSE
   - FOG
   - MATCAP_PERSPECTIVE
@@ -216,8 +217,8 @@ Material:
     - _ConvertFromRoughness: 0
     - _Cull: 0
     - _Cutoff: 0.5
-    - _Cutout: 0
-    - _CutoutCutoff: 0.5
+    - _Cutout: 1
+    - _CutoutCutoff: 0.266
     - _DestBlend: 10
     - _DetailAlbedoMapScale: 1
     - _DetailBlend: 2
@@ -282,7 +283,7 @@ Material:
     - _OutlineComp: 6
     - _OutlineGroup: 1
     - _OutlinePass: 2
-    - _OutlineWidth: 0.004
+    - _OutlineWidth: 0.0104
     - _OutlineWidthIndependent: 0
     - _OutlineZPos: 1
     - _Parallax: 0.005

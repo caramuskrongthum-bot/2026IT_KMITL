@@ -11,6 +11,12 @@ public class Enemy : MonoBehaviour
     [Tooltip("ความเร็วในการเดินตรงไปข้างหน้า")]
     public float moveSpeed = 2.0f;
 
+    [Header("Player Target Settings")]
+    [Tooltip("ตำแหน่งของผู้เล่น (หากปล่อยว่าง ระบบจะหา Object ที่มี Tag 'Player' ให้อัตโนมัติ)")]
+    public Transform playerPosition;
+    [Tooltip("ระยะห่างที่จะให้ Enemy หยุดเดินก่อนถึงตัว Player")]
+    public float stopDistance = 0.5f;
+
     [Header("Knockback Settings (PvZ Style)")]
     [Tooltip("ระยะทาง/แรงถอยหลังเมื่อโดนโจมตี")]
     public float knockbackForce = 6.0f;
@@ -41,13 +47,14 @@ public class Enemy : MonoBehaviour
     private bool isKnockedBack = false;
 
     public UnityEvent Enemy_OnDead;
+    public bool canDealDamageToPlayer = true;
+    public bool canDeadFromAttack = true;
 
     void Awake()
     {
         rb = GetComponent<Rigidbody>();
 
         // ล็อกไม่ให้เคลื่อนที่แกน X (ซ้าย-ขวา) และล็อกการหมุนทุกแกน (X, Y, Z)
-        // ผลลัพธ์: จะขยับได้เฉพาะแกน Y (ขึ้น-ลง/กระโดด) และแกน Z (เดินตรง/กระเด็นถอยหลัง) เท่านั้น
         rb.constraints = RigidbodyConstraints.FreezePositionX |
                          RigidbodyConstraints.FreezeRotationX |
                          RigidbodyConstraints.FreezeRotationY |
@@ -56,7 +63,7 @@ public class Enemy : MonoBehaviour
 
     private void OnTriggerEnter(Collider other)
     {
-        if (other.CompareTag("HitPlayerTrigger"))
+        if (other.CompareTag("HitPlayerTrigger") && canDealDamageToPlayer)
         {
             ApplyPvzKnockback(-transform.position);
             UnityEvent_ A = other.GetComponent<UnityEvent_>();
@@ -79,6 +86,16 @@ public class Enemy : MonoBehaviour
             skillSlider.maxValue = 100f;
             skillSlider.value = 0f;
         }
+
+        // หากยังไม่ได้กำหนด playerPosition ใน Inspector ให้ค้นหาอัตโนมัติจาก Tag "Player"
+        if (playerPosition == null)
+        {
+            GameObject playerObj = GameObject.FindGameObjectWithTag("Player");
+            if (playerObj != null)
+            {
+                playerPosition = playerObj.transform;
+            }
+        }
     }
 
     void Update()
@@ -96,6 +113,26 @@ public class Enemy : MonoBehaviour
 
     private void MoveForward()
     {
+        // เช็กว่ามี playerPosition หรือไม่ หากมีให้ตรวจสอบระยะแกน Z เพื่อหยุดเมื่อถึงตัว
+        if (playerPosition != null)
+        {
+            // คำนวณระยะห่างเฉพาะแกน Z (ทิศทางเดิน)
+            float distanceZ = Mathf.Abs(transform.position.z - playerPosition.position.z);
+
+            // หากเข้าใกล้ระยะ stopDistance หรือเดินเลยแกน Z ของ Player ไปแล้ว ให้สั่งหยุดเดิน
+            bool isMovingForwardDirection = transform.forward.z > 0;
+            bool hasPassedPlayer = isMovingForwardDirection
+                ? transform.position.z >= (playerPosition.position.z - stopDistance)
+                : transform.position.z <= (playerPosition.position.z + stopDistance);
+
+            if (distanceZ <= stopDistance || hasPassedPlayer)
+            {
+                // เคลียร์ความเร็วการเดิน ให้ยืนหยุดนิ่งอยู่กับที่
+                rb.linearVelocity = new Vector3(0, rb.linearVelocity.y, 0);
+                return;
+            }
+        }
+
         // คำนวณตำแหน่งถัดไปโดยยังคงล็อคตำแหน่งแกน X ให้ตรงกับตำแหน่งปัจจุบัน
         Vector3 targetPosition = transform.position + transform.forward * moveSpeed * Time.fixedDeltaTime;
         targetPosition.x = transform.position.x; // ป้องกันการเบี่ยงออกแกน X
@@ -122,26 +159,26 @@ public class Enemy : MonoBehaviour
 
     public void TakeDamage(float damage, Vector3 attackerPosition)
     {
-        currentHealth -= damage;
-        currentHealth = Mathf.Clamp(currentHealth, 0, maxHealth);
+            currentHealth -= damage;
+            currentHealth = Mathf.Clamp(currentHealth, 0, maxHealth);
 
-        if (healthSlider != null)
-        {
-            healthSlider.value = currentHealth;
-        }
+            if (healthSlider != null)
+            {
+                healthSlider.value = currentHealth;
+            }
 
-        ApplyPvzKnockback(attackerPosition);
+            ApplyPvzKnockback(attackerPosition);
 
-        if (currentHealth <= 0)
-        {
-            Die();
-        }
+            if (currentHealth <= 0)
+            {
+                Die();
+            }
     }
 
     public void TakeDamage(float damage)
     {
-        Vector3 attackerPos = transform.position + transform.forward;
-        TakeDamage(damage, attackerPos);
+            Vector3 attackerPos = transform.position + transform.forward;
+            TakeDamage(damage, attackerPos);
     }
 
     private void ApplyPvzKnockback(Vector3 attackerPosition)
@@ -178,7 +215,7 @@ public class Enemy : MonoBehaviour
         isKnockedBack = false;
     }
 
-    private void Die()
+    public void Die()
     {
         // 1. หา EnemySpawner ในฉากเพื่อเช็กจำนวนศัตรูที่เหลือ
         EnemySpawner spawner = FindObjectOfType<EnemySpawner>();
