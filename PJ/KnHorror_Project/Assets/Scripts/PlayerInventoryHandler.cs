@@ -8,10 +8,35 @@ public class PlayerInventoryHandler : MonoBehaviour
     private int currentEquippedIndex = -1;
 
     public GameObject Hand;
+    public GameObject HitBox;
+
+    private Transform mainCameraTransform;
+    private bool isAimingWithCamera = false;
 
     void Start()
     {
         UnequipAll();
+
+        if (Camera.main != null)
+        {
+            mainCameraTransform = Camera.main.transform;
+        }
+    }
+
+    void Update()
+    {
+        // ถ้าเปิด HitBox อยู่ ให้ผู้เล่นหันตาม Main Camera เฉพาะแกน Y แบบ Smooth
+        if (isAimingWithCamera && mainCameraTransform != null)
+        {
+            Vector3 camForward = mainCameraTransform.forward;
+            camForward.y = 0f; // ล็อคแกน Y ไม่ให้ก้มเงย
+
+            if (camForward.sqrMagnitude > 0.001f)
+            {
+                Quaternion targetRotation = Quaternion.LookRotation(camForward);
+                transform.rotation = Quaternion.Slerp(transform.rotation, targetRotation, Time.deltaTime * 15f);
+            }
+        }
     }
 
     public void EquipSlot(int slotIndex)
@@ -48,7 +73,10 @@ public class PlayerInventoryHandler : MonoBehaviour
         if (currentEquippedIndex == 0 && Hand.transform.localScale != Vector3.zero)
         {
             Animator animator = GetComponent<Animator>();
-            animator.Play("Attack");
+            if (animator != null)
+            {
+                animator.Play("Attack");
+            }
         }
     }
 
@@ -56,8 +84,25 @@ public class PlayerInventoryHandler : MonoBehaviour
     {
         Hand.transform.localScale = Vector3.one;
     }
+
     public void HideItemHand()
     {
         Hand.transform.localScale = Vector3.zero;
+    }
+
+    public void EnableHitBox()
+    {
+        HitBox.SetActive(true);
+
+        // เริ่มต้นหันตามกล้องตอนเปิด HitBox
+        isAimingWithCamera = true;
+    }
+
+    public void DisableHitBox()
+    {
+        HitBox.SetActive(false);
+
+        // หยุดการหันตามกล้อง ปล่อยให้ผู้เล่นกลับไปควบคุมการหมุนปกติ
+        isAimingWithCamera = false;
     }
 }

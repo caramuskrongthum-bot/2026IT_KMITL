@@ -6,9 +6,15 @@ public class PlayerStatus : MonoBehaviour
 {
     public Slider HealthBar;
     public UnityEvent Down;
+    public GameObject VFX_Blood;
+    public Transform VFX_Point;
+    public AudioSource SFX_Source;
+    public AudioClip SFX_Damage;
     public void DamageToPlayer(int Damage)
     {
+        Instantiate(VFX_Blood).transform.position = VFX_Point.transform.position;
         HealthBar.value -= Damage;
+        SFX_Source.PlayOneShot(SFX_Damage);
         HealthBar.value = Mathf.Clamp(HealthBar.value,0,100);
         if (HealthBar.value == 0)
         {

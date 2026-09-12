@@ -19,6 +19,10 @@ Material:
   - HAIR_WIND
   - MATCAP_PERSPECTIVE
   - OUTLINE_PASS_DISABLED
+  - REFLECTION
+  - REFLECTION_RIM
+  - REFLECTION_TEX
+  - RIM
   - SHADOWS_ENABLED
   - _DETAILBLEND_MULTIPLY
   - _DETAILUV_UV1
@@ -135,7 +139,7 @@ Material:
         m_Scale: {x: 1, y: 1}
         m_Offset: {x: 0, y: 0}
     - _ReflectionTex:
-        m_Texture: {fileID: 0}
+        m_Texture: {fileID: 8900000, guid: 23a735c593d9220498ecb92fcc8097f5, type: 3}
         m_Scale: {x: 1, y: 1}
         m_Offset: {x: 0, y: 0}
     - _ShadowOverlayTex:
@@ -280,14 +284,14 @@ Material:
     - _Preset: 0
     - _QueueOffset: 0
     - _ReceiveShadows: 1
-    - _Reflection: 0
+    - _Reflection: 1
     - _ReflectionAmount: 1
-    - _ReflectionRim: 0
+    - _ReflectionRim: 1
     - _ReflectionSpecular: 0
-    - _Rim: 0
-    - _RimAmount: 1
+    - _Rim: 1
+    - _RimAmount: 0.3
     - _RimBlend: 1
-    - _RimContrast: 5
+    - _RimContrast: 1.8
     - _RimInverse: 0
     - _Saturation: 1
     - _ShadowOverlayAnimation: 0
@@ -360,7 +364,7 @@ Material:
     - _MatCapRot: {r: 0, g: 0, b: 0, a: 0}
     - _OutlineColor: {r: 0, g: 0, b: 0, a: 1}
     - _ReflectionColor: {r: 1, g: 1, b: 1, a: 1}
-    - _RimColor: {r: 1, g: 1, b: 1, a: 1}
+    - _RimColor: {r: 0.9150943, g: 0.9150943, b: 0.9150943, a: 1}
     - _RimDirection: {r: 0, g: 0, b: 0, a: 0}
     - _ShadowColor: {r: 0.764151, g: 0.764151, b: 0.764151, a: 1}
     - _SpecColor: {r: 0.19999996, g: 0.19999996, b: 0.19999996, a: 1}

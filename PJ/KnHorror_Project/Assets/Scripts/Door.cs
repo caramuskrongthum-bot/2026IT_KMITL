@@ -11,6 +11,8 @@ public class Door : MonoBehaviour
     public float waitTime = 1f;
 
     private bool isLoading = false;
+    public AudioSource AS;
+    public AudioClip AC;
 
     private void OnTriggerStay(Collider other)
     {
@@ -83,7 +85,7 @@ public class Door : MonoBehaviour
             Player_P_T.rotation;
 
         float elapsed = 0f;
-
+        AS.PlayOneShot(AC);
         while (elapsed < moveDuration)
         {
             elapsed += Time.deltaTime;

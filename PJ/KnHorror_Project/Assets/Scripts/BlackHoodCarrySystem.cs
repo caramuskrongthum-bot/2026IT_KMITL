@@ -1,19 +1,23 @@
-using UnityEngine;
+﻿using UnityEngine;
+using UnityEngine.AI;
 
 public class BlackHoodCarrySystem : MonoBehaviour
 {
     [Header("Movement")]
-    public float moveSpeed = 2.5f;
     public float stopDistance = 1.5f;
-    public float rotationSpeed = 8f;
 
     private Animator animator;
+    private NavMeshAgent agent;
+
     private Transform targetTM;
-    private bool isMoving;
+    private bool isCarrying;
 
     private void Awake()
     {
         animator = GetComponent<Animator>();
+        agent = GetComponent<NavMeshAgent>();
+
+        agent.stoppingDistance = stopDistance;
     }
 
     private void OnTriggerEnter(Collider other)
@@ -21,7 +25,7 @@ public class BlackHoodCarrySystem : MonoBehaviour
         if (!other.CompareTag("Player"))
             return;
 
-        PlayerStatus player = other.GetComponent<PlayerStatus>();
+        PlayerStatus player = other.GetComponentInParent<PlayerStatus>();
 
         if (player == null)
             return;
@@ -30,18 +34,34 @@ public class BlackHoodCarrySystem : MonoBehaviour
         {
             player.GotCarry(gameObject);
 
+            isCarrying = true;
+
+            agent.isStopped = true;
+
             animator.Play("E_Carry");
+
+            Invoke(nameof(StartWalkingToTM), 1f);
         }
     }
 
-    public void StartWalking()
+    private void StartWalkingToTM()
     {
         targetTM = FindNearestTM();
 
-        if (targetTM != null)
+        if (targetTM == null)
         {
-            isMoving = true;
+            Debug.LogWarning("BlackHood: ไม่พบ TM");
+            return;
         }
+
+        if (!agent.isOnNavMesh)
+        {
+            Debug.LogWarning("BlackHood: Agent ไม่ได้อยู่บน NavMesh");
+            return;
+        }
+
+        agent.isStopped = false;
+        agent.SetDestination(targetTM.position);
     }
 
     private Transform FindNearestTM()
@@ -70,29 +90,16 @@ public class BlackHoodCarrySystem : MonoBehaviour
 
     private void Update()
     {
-        if (!isMoving || targetTM == null)
+        if (!isCarrying || targetTM == null)
             return;
 
-        Vector3 direction = targetTM.position - transform.position;
-
-        direction.y = 0f;
-
-        if (direction.magnitude <= stopDistance)
+        if (!agent.pathPending &&
+            agent.remainingDistance <= agent.stoppingDistance)
         {
-            isMoving = false;
-            return;
+            agent.isStopped = true;
+            isCarrying = false;
+
+            Debug.Log("BlackHood: ถึง TM แล้ว");
         }
-
-        direction.Normalize();
-
-        transform.position += direction * moveSpeed * Time.deltaTime;
-
-        Quaternion targetRotation = Quaternion.LookRotation(direction);
-
-        transform.rotation = Quaternion.Slerp(
-            transform.rotation,
-            targetRotation,
-            rotationSpeed * Time.deltaTime
-        );
     }
 }

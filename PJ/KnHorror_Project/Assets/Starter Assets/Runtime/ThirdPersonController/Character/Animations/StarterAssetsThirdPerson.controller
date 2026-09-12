@@ -343,9 +343,9 @@ AnimatorStateTransition:
   m_Mute: 0
   m_IsExit: 0
   serializedVersion: 3
-  m_TransitionDuration: 0.09719515
+  m_TransitionDuration: 0.59585094
   m_TransitionOffset: 0
-  m_ExitTime: 0.9316791
+  m_ExitTime: 0.7788406
   m_HasExitTime: 1
   m_HasFixedDuration: 1
   m_InterruptionSource: 0
@@ -626,7 +626,7 @@ AnimatorController:
   - serializedVersion: 5
     m_Name: Action
     m_StateMachine: {fileID: -7885964629471446563}
-    m_Mask: {fileID: 31900000, guid: 761cad6eab399d54885f735b575cb7b2, type: 2}
+    m_Mask: {fileID: 0}
     m_Motions: []
     m_Behaviours: []
     m_BlendingMode: 0
@@ -897,7 +897,7 @@ AnimatorState:
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_Name: Down
-  m_Speed: 0.8
+  m_Speed: 0.7
   m_CycleOffset: 0
   m_Transitions:
   - {fileID: 6386972265947413645}

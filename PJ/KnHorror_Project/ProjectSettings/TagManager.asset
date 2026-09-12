@@ -7,6 +7,7 @@ TagManager:
   - CinemachineTarget
   - PlayerNewPosition
   - TM
+  - HitBoxForMonster
   layers:
   - Default
   - TransparentFX
