@@ -13,6 +13,8 @@ public class PlayerInventoryHandler : MonoBehaviour
     private Transform mainCameraTransform;
     private bool isAimingWithCamera = false;
 
+    public AudioSource AS;
+    public AudioClip AC;
     void Start()
     {
         UnequipAll();
@@ -68,13 +70,20 @@ public class PlayerInventoryHandler : MonoBehaviour
         }
     }
 
+    private float lastAttackTime;
+    public float attackCooldown = 1f;
+
     public void Attack_()
     {
+        if (Time.time < lastAttackTime + attackCooldown) return;
+
         if (currentEquippedIndex == 0 && Hand.transform.localScale != Vector3.zero)
         {
             Animator animator = GetComponent<Animator>();
             if (animator != null)
             {
+                lastAttackTime = Time.time;
+                AS.PlayOneShot(AC);
                 animator.Play("Attack");
             }
         }

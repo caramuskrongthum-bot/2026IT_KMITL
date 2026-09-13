@@ -210,6 +210,10 @@ namespace StarterAssets
             {
                 Move();
             }
+            else
+            {
+                _animator.SetFloat("Speed", 0);
+            }
         }
 
         private void LateUpdate()
