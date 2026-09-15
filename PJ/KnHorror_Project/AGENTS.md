@@ -2,7 +2,7 @@
 - Project name: KnHorror_Project
 - Unity version: Unity 6000.3.16f1
 - Active game object:
-  - Name: RoomManager
+  - Name: Text (Legacy)
   - Tag: Untagged
-  - Layer: Default
+  - Layer: UI
 <!-- UNITY CODE ASSIST INSTRUCTIONS END -->
