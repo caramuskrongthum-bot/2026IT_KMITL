@@ -3,8 +3,7 @@ Shader "TextMeshPro/StopMotionDistortion"
     Properties
     {
         [PerRendererData] _MainTex ("Font Atlas", 2D) = "white" {}
-
-        _FaceColor ("Face Color", Color) = (1,1,1,1)
+        _FaceColor ("Face Tint", Color) = (1,1,1,1)
 
         [Header(Distortion)]
         _NormalMap ("Normal Map", 2D) = "bump" {}
@@ -112,15 +111,11 @@ Shader "TextMeshPro/StopMotionDistortion"
                 v2f o;
 
                 o.vertex = UnityObjectToClipPos(v.vertex);
-
                 o.uv = TRANSFORM_TEX(v.texcoord, _MainTex);
+                o.normalUV = v.texcoord * _NormalTiling.xy;
 
-                o.normalUV =
-                    v.texcoord * _NormalTiling.xy;
-
-                o.color =
-                    v.color *
-                    _FaceColor;
+                // ???????????: ??????????? Vertex (TextMeshPro GUI) ????? Fragment
+                o.color = v.color * _FaceColor;
 
                 return o;
             }
@@ -320,12 +315,9 @@ Shader "TextMeshPro/StopMotionDistortion"
 
                 fixed4 col;
 
-                col.rgb =
-                    _FaceColor.rgb;
-
-                col.a =
-                    alpha *
-                    i.color.a;
+                // ???????? Vertex (i.color) ??????????? TextMeshPro GUI ??????
+                col.rgb = i.color.rgb;
+                col.a = alpha * i.color.a;
 
                 return col;
             }

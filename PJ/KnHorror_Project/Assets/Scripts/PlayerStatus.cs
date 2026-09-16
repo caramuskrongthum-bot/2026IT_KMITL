@@ -13,15 +13,21 @@ public class PlayerStatus : MonoBehaviour
     public AudioSource SFX_HeartBeat;
     public AudioClip SFX_Damage;
     public Volume Volume;
+    public GameObject HoodBlackPrefab;
 
     [Header("Smooth Settings")]
     public float lerpSpeed = 5f; // ความเร็วในการเลื่อนหลอดเลือดและเอฟเฟกต์
     private float targetHealth;
 
+    // 👑 ตัวแปรเช็คสถานะ เพื่อให้ฝั่งมอนสเตอร์เช็คได้ทันที
+    private bool isDead = false;
+
     void Start()
     {
         if (HealthBar != null)
+        {
             targetHealth = HealthBar.value;
+        }
     }
 
     void Update()
@@ -54,47 +60,71 @@ public class PlayerStatus : MonoBehaviour
 
     public void DamageToPlayer(int Damage)
     {
-        Instantiate(VFX_Blood).transform.position = VFX_Point.transform.position;
+        if (isDead || (HealthBar != null && HealthBar.value < 1f)) return;
+
+        if (VFX_Blood != null && VFX_Point != null)
+        {
+            Instantiate(VFX_Blood).transform.position = VFX_Point.transform.position;
+        }
 
         targetHealth -= Damage;
         targetHealth = Mathf.Clamp(targetHealth, 0, 100);
 
-        SFX_Source.PlayOneShot(SFX_Damage);
-
-        if (targetHealth <= 0)
+        if (SFX_Source != null && SFX_Damage != null)
         {
+            SFX_Source.PlayOneShot(SFX_Damage);
+        }
+
+        if (targetHealth == 0 && !isDead)
+        {
+            isDead = true;
             Animator A = GetComponent<Animator>();
-            A.Play("Down");
+            if (A != null) A.Play("Down");
+
             Down.Invoke();
+
+            if (HoodBlackPrefab != null)
+            {
+                GameObject B = Instantiate(HoodBlackPrefab).gameObject;
+                B.transform.position = Vector3.zero;
+            }
         }
 
         if (targetHealth <= 30)
         {
-            if (!SFX_HeartBeat.isPlaying) SFX_HeartBeat.Play();
+            if (SFX_HeartBeat != null && !SFX_HeartBeat.isPlaying) SFX_HeartBeat.Play();
         }
         else
         {
-            SFX_HeartBeat.Stop();
+            if (SFX_HeartBeat != null) SFX_HeartBeat.Stop();
         }
     }
 
     public void HealToPlayer(int Heal)
     {
+        if (isDead) return;
+
         targetHealth += Heal;
         targetHealth = Mathf.Clamp(targetHealth, 0, 100);
 
         if (targetHealth > 30)
         {
-            SFX_HeartBeat.Stop();
+            if (SFX_HeartBeat != null) SFX_HeartBeat.Stop();
         }
     }
 
     public void GotCarry(GameObject B)
     {
         Animator A = GetComponent<Animator>();
-        A.Play("P_Carry");
+        if (A != null) A.Play("P_Carry");
         transform.position = B.transform.position;
         transform.rotation = B.transform.rotation;
-        transform.parent = B.transform;
+        transform.parent = B.transform.parent;
+    }
+
+    // 👑 เมธอดเสริมให้มอนสเตอร์เช็คว่าผู้เล่นม่องเท่งหรือยังแบบชัวร์ๆ
+    public bool IsPlayerDead()
+    {
+        return isDead || targetHealth <= 0f;
     }
 }

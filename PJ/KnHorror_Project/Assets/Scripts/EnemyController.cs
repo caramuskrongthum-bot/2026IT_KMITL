@@ -86,6 +86,9 @@ public class EnemyController : MonoBehaviour
             return;
         }
 
+        // 🛑 เช็คว่าผู้เล่นเลือดหมดหรือยัง
+        bool isPlayerDead = (playerStatus.HealthBar != null && playerStatus.HealthBar.value <= 0f);
+
         float distanceToPlayer = Vector3.Distance(transform.position, playerTransform.position);
 
         // เช็คว่าอยู่ในระยะแสดงหลอดเลือดไหม (ใช้ detectionRange เป็นเกณฑ์)
@@ -98,14 +101,14 @@ public class EnemyController : MonoBehaviour
             ToggleHealthBar(false);
         }
 
-        // ถ้าผู้เล่นล้ม ให้ศัตรูเดินไปทางอื่นแทน
-        if (isPlayerDown)
+        // ถ้าผู้เล่นล้ม หรือ เลือดผู้เล่นหมดแล้ว ให้มอนสเตอร์เดินไปทางอื่นแทน (Roam)
+        if (isPlayerDown || isPlayerDead)
         {
             RoamAwayFromPlayer();
             return;
         }
 
-        // เดินเข้าหา Player
+        // เดินเข้าหา Player (ถ้าผู้เล่นยังไม่ตาย)
         if (distanceToPlayer <= detectionRange && distanceToPlayer > attackRange)
         {
             MoveTowardsPlayer();
@@ -167,11 +170,9 @@ public class EnemyController : MonoBehaviour
     private void AttackPlayer(Vector3 hitDirection)
     {
         if (playerStatus == null) return;
-
-        float currentHealthPlayer = playerStatus.HealthBar.value;
+        if (playerStatus.HealthBar != null && playerStatus.HealthBar.value <= 0f) return;
         playerStatus.DamageToPlayer(attackDamage);
-
-        if (playerStatus.HealthBar.value <= 0f && currentHealthPlayer > 0f)
+        if (playerStatus.HealthBar != null && playerStatus.HealthBar.value <= 0f)
         {
             PlayerDown();
         }
@@ -208,7 +209,6 @@ public class EnemyController : MonoBehaviour
     {
         if (other.CompareTag("HitBoxForMonster"))
         {
-            // คำนวณดาเมจ (สมมติให้โดนทีละ 25 ดาเมจ ปรับเปลี่ยนได้ตามชอบ)
             TakeDamage(25, other.transform.position);
         }
     }
@@ -237,7 +237,6 @@ public class EnemyController : MonoBehaviour
         }
         else
         {
-            // ถ้าไม่มี Rigidbody ให้ใช้การขยับตำแหน่งเบื้องต้นแทน
             transform.position += knockbackDir * (knockbackForce * 0.2f);
         }
 

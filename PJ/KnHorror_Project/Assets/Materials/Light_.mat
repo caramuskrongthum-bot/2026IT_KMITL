@@ -104,7 +104,7 @@ Material:
     - _EnvironmentReflections: 1
     - _Exposure: 0.07
     - _FadeEnd: 10
-    - _FadeStart: 1
+    - _FadeStart: 5.36
     - _FogStrength: 1
     - _GlossMapScale: 0
     - _Glossiness: 0

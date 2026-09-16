@@ -1,5 +1,6 @@
 ﻿using UnityEngine;
 using System.Collections.Generic;
+using Tiny;
 
 public class PlayerInventoryHandler : MonoBehaviour
 {
@@ -15,6 +16,8 @@ public class PlayerInventoryHandler : MonoBehaviour
 
     public AudioSource AS;
     public AudioClip AC;
+
+    public Trail Trail;
     void Start()
     {
         UnequipAll();
@@ -102,16 +105,14 @@ public class PlayerInventoryHandler : MonoBehaviour
     public void EnableHitBox()
     {
         HitBox.SetActive(true);
-
-        // เริ่มต้นหันตามกล้องตอนเปิด HitBox
+        Trail.enabled = true;
         isAimingWithCamera = true;
     }
 
     public void DisableHitBox()
     {
         HitBox.SetActive(false);
-
-        // หยุดการหันตามกล้อง ปล่อยให้ผู้เล่นกลับไปควบคุมการหมุนปกติ
+        Trail.enabled = false;
         isAimingWithCamera = false;
     }
 }

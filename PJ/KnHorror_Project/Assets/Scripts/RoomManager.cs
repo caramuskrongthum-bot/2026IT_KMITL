@@ -3,17 +3,17 @@ using UnityEngine;
 
 public class RoomManager : MonoBehaviour
 {
-    public GameObject PrefabRoom;
+    public GameObject[] PrefabRoom;
+    public int IndexRandom;
     public GameObject PrefabNextRoomUiPopUp;
     public int IndexRoom;
     public Transform Canva;
-
     Vector3 NewRoomLoadPos;
 
     public void LoadNextRoom()
     {
         IndexRoom++;
-        GameObject r = Instantiate(PrefabRoom);
+        GameObject r = Instantiate(PrefabRoom[IndexRandom = Random.Range(0,PrefabRoom.Length)]);
         NewRoomLoadPos.z += 10;
         r.transform.position = NewRoomLoadPos;
         if (RuntimeNavMeshManager.Instance != null)
