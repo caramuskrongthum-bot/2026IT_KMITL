@@ -29,8 +29,9 @@ Material:
   - ANIME_SOFT
   - DIFFUSE
   - FOG
+  - HAIR_WIND
   - MATCAP_PERSPECTIVE
-  - OUTLINE_PASS_DISABLED
+  - OUTLINE
   - REFLECTION
   - REFLECTION_RIM
   - REFLECTION_TEX
@@ -61,7 +62,6 @@ Material:
   stringTagMap: {}
   disabledShaderPasses:
   - MOTIONVECTORS
-  - SRPDEFAULTUNLIT
   m_LockedProperties: 
   m_SavedProperties:
     serializedVersion: 3
@@ -218,9 +218,9 @@ Material:
     - _DetailVertexColors: 0
     - _Diffuse: 1
     - _DiffuseBrightness: 0.3
-    - _DiffuseContrast: 0.9
+    - _DiffuseContrast: 1.8
     - _DiffusePerPixel: 0
-    - _DiffuseWrap: 1
+    - _DiffuseWrap: 0.48
     - _DstBlend: 0
     - _DstBlendAlpha: 0
     - _EnvironmentReflections: 1
@@ -229,7 +229,7 @@ Material:
     - _GlossMapScale: 0
     - _Glossiness: 0
     - _GlossyReflections: 0
-    - _HairWind: 0
+    - _HairWind: 1
     - _HairWindFrequency: 2
     - _HairWindSpeed: 3
     - _HairWindStrength: 0.15
@@ -270,13 +270,13 @@ Material:
     - _NormalUV: 0
     - _NormalUV2: 0
     - _OcclusionStrength: 1
-    - _Outline: 0
+    - _Outline: 1
     - _OutlineComp: 8
     - _OutlineGroup: 0
     - _OutlinePass: 0
-    - _OutlineWidth: 0.002
+    - _OutlineWidth: 0.0046
     - _OutlineWidthIndependent: 0
-    - _OutlineZPos: 0
+    - _OutlineZPos: 0.321
     - _Parallax: 0.005
     - _Plant: 0
     - _PlantBaseHeight: 0
@@ -289,13 +289,13 @@ Material:
     - _QueueOffset: 0
     - _ReceiveShadows: 1
     - _Reflection: 1
-    - _ReflectionAmount: 1
+    - _ReflectionAmount: 0.276
     - _ReflectionRim: 1
     - _ReflectionSpecular: 0
     - _Rim: 1
-    - _RimAmount: 0.3
+    - _RimAmount: 1.8
     - _RimBlend: 1
-    - _RimContrast: 1.8
+    - _RimContrast: 3.3
     - _RimInverse: 0
     - _Saturation: 1
     - _ShadowOverlayAnimation: 0
@@ -349,7 +349,7 @@ Material:
     - _AnimeColor2: {r: 1.35, g: 1.35, b: 1.35, a: 1}
     - _AnimeColor3: {r: 2, g: 2, b: 2, a: 1}
     - _BaseColor: {r: 1, g: 1, b: 1, a: 1}
-    - _Color: {r: 0.8773585, g: 0.8773585, b: 0.8773585, a: 1}
+    - _Color: {r: 0.7075472, g: 0.7075472, b: 0.7075472, a: 1}
     - _DetailColor: {r: 1, g: 1, b: 1, a: 1}
     - _EmissionColor: {r: 0, g: 0, b: 0, a: 1}
     - _Emissive: {r: 0, g: 0, b: 0, a: 0}
@@ -363,7 +363,7 @@ Material:
     - _MatCapRot: {r: 0, g: 0, b: 0, a: 0}
     - _OutlineColor: {r: 0, g: 0, b: 0, a: 1}
     - _ReflectionColor: {r: 1, g: 1, b: 1, a: 1}
-    - _RimColor: {r: 0.9150943, g: 0.9150943, b: 0.9150943, a: 1}
+    - _RimColor: {r: 0.21698111, g: 0.21698111, b: 0.21698111, a: 1}
     - _RimDirection: {r: 0, g: 0, b: 0, a: 0}
     - _ShadowColor: {r: 0.3, g: 0.3, b: 0.3, a: 1}
     - _SpecColor: {r: 0.19999996, g: 0.19999996, b: 0.19999996, a: 1}

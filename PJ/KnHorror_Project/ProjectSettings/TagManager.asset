@@ -8,6 +8,7 @@ TagManager:
   - PlayerNewPosition
   - TM
   - HitBoxForMonster
+  - Ui_Manager
   layers:
   - Default
   - TransparentFX

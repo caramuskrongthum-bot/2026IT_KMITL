@@ -2,6 +2,7 @@
 using UnityEngine.Events;
 using UnityEngine.Rendering;
 using UnityEngine.UI;
+using System.Collections;
 
 public class PlayerStatus : MonoBehaviour
 {
@@ -14,7 +15,7 @@ public class PlayerStatus : MonoBehaviour
     public AudioClip SFX_Damage;
     public Volume Volume;
     public GameObject HoodBlackPrefab;
-
+    public PlayerInventoryHandler PlayerInventoryHandler;
     [Header("Smooth Settings")]
     public float lerpSpeed = 5f; // ความเร็วในการเลื่อนหลอดเลือดและเอฟเฟกต์
     private float targetHealth;
@@ -77,10 +78,10 @@ public class PlayerStatus : MonoBehaviour
 
         if (targetHealth == 0 && !isDead)
         {
+            StartCoroutine(HandlePlayerDownRoutine());
             isDead = true;
             Animator A = GetComponent<Animator>();
             if (A != null) A.Play("Down");
-
             Down.Invoke();
 
             if (HoodBlackPrefab != null)
@@ -89,7 +90,6 @@ public class PlayerStatus : MonoBehaviour
                 B.transform.position = Vector3.zero;
             }
         }
-
         if (targetHealth <= 30)
         {
             if (SFX_HeartBeat != null && !SFX_HeartBeat.isPlaying) SFX_HeartBeat.Play();
@@ -100,10 +100,16 @@ public class PlayerStatus : MonoBehaviour
         }
     }
 
+    private IEnumerator HandlePlayerDownRoutine()
+    {
+        Animator A = GetComponent<Animator>();
+        A.applyRootMotion = true;
+        yield return new WaitForSeconds(1.5f);
+        A.applyRootMotion = false;
+    }
     public void HealToPlayer(int Heal)
     {
         if (isDead) return;
-
         targetHealth += Heal;
         targetHealth = Mathf.Clamp(targetHealth, 0, 100);
 

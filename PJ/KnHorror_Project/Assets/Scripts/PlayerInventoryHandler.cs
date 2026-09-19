@@ -1,6 +1,7 @@
 ﻿using UnityEngine;
 using System.Collections.Generic;
 using Tiny;
+using StarterAssets;
 
 public class PlayerInventoryHandler : MonoBehaviour
 {
@@ -11,6 +12,10 @@ public class PlayerInventoryHandler : MonoBehaviour
     public GameObject Hand;
     public GameObject HitBox;
 
+    public GameObject MOBILE_ATTACK_BTN;
+
+    public GameObject Light;
+
     private Transform mainCameraTransform;
     private bool isAimingWithCamera = false;
 
@@ -18,43 +23,142 @@ public class PlayerInventoryHandler : MonoBehaviour
     public AudioClip AC;
 
     public Trail Trail;
+
+    private Animator animator;
+    public float layerTransitionSpeed = 5f;
+
+    [Header("Fog Settings")]
+    public float normalFogDensity = 0.4f;
+    public float item2FogDensity = 0.123f;
+    public float fogTransitionSpeed = 2f;
+
+    [Header("Catching")]
+    private ThirdPersonController thirdPersonController;
+    private bool lastCatchingState = false;
+
     void Start()
     {
+        animator = GetComponent<Animator>();
+
+        thirdPersonController = GetComponent<ThirdPersonController>();
+
         UnequipAll();
 
         if (Camera.main != null)
         {
             mainCameraTransform = Camera.main.transform;
         }
+
+        if (handItems.Count > 0)
+        {
+            EquipSlot(0);
+        }
+
+        if (thirdPersonController != null)
+        {
+            lastCatchingState = thirdPersonController.IsCatching;
+
+            if (lastCatchingState)
+                HideItemHand();
+            else
+                ShowItemHand();
+        }
     }
 
     void Update()
     {
-        // ถ้าเปิด HitBox อยู่ ให้ผู้เล่นหันตาม Main Camera เฉพาะแกน Y แบบ Smooth
+        // ==========================================
+        // CHECK CATCHING STATE
+        // ==========================================
+
+        if (thirdPersonController != null)
+        {
+            bool currentCatchingState = thirdPersonController.IsCatching;
+
+            if (currentCatchingState != lastCatchingState)
+            {
+                lastCatchingState = currentCatchingState;
+
+                if (currentCatchingState)
+                {
+                    HideItemHand();
+                }
+                else
+                {
+                    ShowItemHand();
+                }
+            }
+        }
+
+        // ==========================================
+        // CAMERA AIM
+        // ==========================================
+
         if (isAimingWithCamera && mainCameraTransform != null)
         {
             Vector3 camForward = mainCameraTransform.forward;
-            camForward.y = 0f; // ล็อคแกน Y ไม่ให้ก้มเงย
+            camForward.y = 0f;
 
             if (camForward.sqrMagnitude > 0.001f)
             {
                 Quaternion targetRotation = Quaternion.LookRotation(camForward);
-                transform.rotation = Quaternion.Slerp(transform.rotation, targetRotation, Time.deltaTime * 15f);
+                transform.rotation = Quaternion.Slerp(
+                    transform.rotation,
+                    targetRotation,
+                    Time.deltaTime * 15f
+                );
             }
+        }
+
+        // ==========================================
+        // UI
+        // ==========================================
+
+        MOBILE_ATTACK_BTN.SetActive(currentEquippedIndex == 0);
+        Light.SetActive(currentEquippedIndex == 1);
+
+        // ==========================================
+        // ANIMATOR LAYER
+        // ==========================================
+
+        if (animator != null && animator.layerCount > 2)
+        {
+            float targetLayerWeight = (currentEquippedIndex == 1) ? 1f : 0f;
+
+            float currentWeight = animator.GetLayerWeight(2);
+
+            float newWeight = Mathf.MoveTowards(
+                currentWeight,
+                targetLayerWeight,
+                Time.deltaTime * layerTransitionSpeed
+            );
+
+            animator.SetLayerWeight(2, newWeight);
+        }
+
+        // ==========================================
+        // FOG
+        // ==========================================
+
+        if (RenderSettings.fog)
+        {
+            float targetFog =
+                (currentEquippedIndex == 1)
+                ? item2FogDensity
+                : normalFogDensity;
+
+            RenderSettings.fogDensity = Mathf.MoveTowards(
+                RenderSettings.fogDensity,
+                targetFog,
+                Time.deltaTime * fogTransitionSpeed
+            );
         }
     }
 
     public void EquipSlot(int slotIndex)
     {
-        if (slotIndex < 0 || slotIndex >= handItems.Count) return;
-
-        // กดซ้ำช่องเดิม = เก็บของเข้าตัว
-        if (currentEquippedIndex == slotIndex)
-        {
-            UnequipAll();
-            currentEquippedIndex = -1;
+        if (slotIndex < 0 || slotIndex >= handItems.Count)
             return;
-        }
 
         UnequipAll();
 
@@ -69,7 +173,8 @@ public class PlayerInventoryHandler : MonoBehaviour
     {
         foreach (GameObject item in handItems)
         {
-            if (item != null) item.SetActive(false);
+            if (item != null)
+                item.SetActive(false);
         }
     }
 
@@ -78,29 +183,49 @@ public class PlayerInventoryHandler : MonoBehaviour
 
     public void Attack_()
     {
-        if (Time.time < lastAttackTime + attackCooldown) return;
+        if (Time.time < lastAttackTime + attackCooldown)
+            return;
 
-        if (currentEquippedIndex == 0 && Hand.transform.localScale != Vector3.zero)
+        ThirdPersonController T = GetComponent<ThirdPersonController>();
+
+        if (currentEquippedIndex == 0 &&
+            T.CanMove == true &&
+            T.IsCatching == false)
         {
-            Animator animator = GetComponent<Animator>();
             if (animator != null)
             {
                 lastAttackTime = Time.time;
+
                 AS.PlayOneShot(AC);
+
                 animator.Play("Attack");
             }
         }
     }
 
+    // ==========================================
+    // HAND ITEM
+    // ==========================================
+
     public void ShowItemHand()
     {
-        Hand.transform.localScale = Vector3.one;
+        if (Hand != null)
+        {
+            Hand.transform.localScale = Vector3.one;
+        }
     }
 
     public void HideItemHand()
     {
-        Hand.transform.localScale = Vector3.zero;
+        if (Hand != null)
+        {
+            Hand.transform.localScale = Vector3.zero;
+        }
     }
+
+    // ==========================================
+    // HIT BOX
+    // ==========================================
 
     public void EnableHitBox()
     {

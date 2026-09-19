@@ -30,9 +30,26 @@ public class Door : MonoBehaviour
             StartPushDoor();
         }
     }
-
+    private void OnTriggerEnter(Collider other)
+    {
+        if (other.CompareTag("Player"))
+        {
+            Ui_Manager Ui_Manager = GameObject.FindGameObjectWithTag("Ui_Manager").GetComponent<Ui_Manager>();
+            Ui_Manager.EnterCanInteract();
+        }
+    }
+    private void OnTriggerExit(Collider other)
+    {
+        if (other.CompareTag("Player"))
+        {
+            Ui_Manager Ui_Manager = GameObject.FindGameObjectWithTag("Ui_Manager").GetComponent<Ui_Manager>();
+            Ui_Manager.ExitCanInteract();
+        }
+    }
     public void StartPushDoor()
     {
+        Ui_Manager Ui_Manager = GameObject.FindGameObjectWithTag("Ui_Manager").GetComponent<Ui_Manager>();
+        Ui_Manager.ExitCanInteract();
         if (isLoading)
             return;
 

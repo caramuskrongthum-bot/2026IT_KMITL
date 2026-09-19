@@ -15,11 +15,5 @@
                 </ui:VisualElement>
             </ui:VisualElement>
         </ui:VisualElement>
-        <ui:VisualElement name="ButtonJump" class="touchscreen-button" style="bottom: 542px; right: 62px;">
-            <ui:VisualElement name="ButtonImage" class="button-icon" style="flex-grow: 1;"/>
-        </ui:VisualElement>
-        <ui:VisualElement name="ButtonSprint" class="touchscreen-button" style="bottom: 678px; right: 60px;">
-            <ui:VisualElement name="ButtonImage" class="button-icon" style="flex-grow: 1;"/>
-        </ui:VisualElement>
     </ui:VisualElement>
 </ui:UXML>

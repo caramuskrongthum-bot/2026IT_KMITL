@@ -1,8 +1,7 @@
 ﻿using UnityEngine;
-#if ENABLE_INPUT_SYSTEM
 using UnityEngine.InputSystem;
-#endif
-
+using System.Collections.Generic;
+using StarterAssets;
 namespace StarterAssets
 {
     [RequireComponent(typeof(CharacterController))]
@@ -11,6 +10,7 @@ namespace StarterAssets
 #endif
     public class ThirdPersonController : MonoBehaviour
     {
+
         [Header("Player")]
         [Tooltip("Move speed of the character in m/s")]
         public float MoveSpeed = 2.0f;
@@ -148,7 +148,6 @@ namespace StarterAssets
         private Vector3 _leftFootIKPos, _rightFootIKPos;
         private Quaternion _leftFootIKRot, _rightFootIKRot;
         private float _currentLeftWeight, _currentRightWeight;
-
         public bool CanMove = true;
         private bool IsCurrentDeviceMouse
         {

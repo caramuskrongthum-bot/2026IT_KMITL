@@ -4,7 +4,10 @@ using UnityEngine.AI;
 public class BlackHoodCarrySystem : MonoBehaviour
 {
     [Header("Movement")]
-    public float stopDistance = 1.5f;
+    public float stopDistance = 1.0f; // ปรับให้เท่ากับหรือใกล้เคียง carryDistance
+
+    [Header("Carry")]
+    public float carryDistance = 1.0f; // ระยะที่เริ่มอุ้ม
 
     private Animator animator;
     private NavMeshAgent agent;
@@ -30,54 +33,55 @@ public class BlackHoodCarrySystem : MonoBehaviour
 
     private void Start()
     {
-        // เรียกใช้งาน StartWalk ตอนเริ่มเกมเพื่อให้เดินไปหาผู้เล่นทันที
         StartWalk();
     }
 
-    /// <summary>
-    /// 👑 ฟังก์ชัน public สำหรับสั่งให้ BlackHood เริ่มออกเดินตามหา Player
-    /// </summary>
     public void StartWalk()
     {
-        if (agent == null || playerTransform == null) return;
-
-        if (!agent.isOnNavMesh)
-        {
-            Debug.LogWarning("BlackHood: Agent ไม่ได้อยู่บน NavMesh ตอนพยายามเดิน!");
+        if (agent == null || playerTransform == null)
             return;
-        }
 
         agent.isStopped = false;
         agent.stoppingDistance = stopDistance;
         agent.SetDestination(playerTransform.position);
     }
 
-    private void OnTriggerEnter(Collider other)
+    private void TryCarryPlayer()
     {
-        if (!other.CompareTag("Player") || isCarrying)
+        if (isCarrying || playerTransform == null)
             return;
 
-        PlayerStatus player = other.GetComponentInParent<PlayerStatus>();
+        float distance = Vector3.Distance(transform.position, playerTransform.position);
 
-        if (player != null)
+        // เช็คว่าอยู่ในระยะอุ้มหรือยัง
+        if (distance > carryDistance)
+            return;
+
+        PlayerStatus player = playerTransform.GetComponentInParent<PlayerStatus>();
+        if (player == null)
+            return;
+
+        // เช็คเลือดผู้เล่น
+        if (player.HealthBar != null && player.HealthBar.value <= 0f)
         {
-            if (player.HealthBar != null && player.HealthBar.value <= 0f)
+            player.GotCarry(gameObject);
+            player.transform.parent = transform;
+            isCarrying = true;
+
+            // หยุดเดินทันทีแบบเด็ดขาด
+            agent.isStopped = true;
+            agent.velocity = Vector3.zero;
+
+            if (animator != null)
             {
-                player.GotCarry(gameObject);
-                player.transform.parent = transform;
-
-                isCarrying = true;
-                agent.isStopped = true;
-
-                if (animator != null)
-                {
-                    animator.Play("E_Carry");
-                }
+                animator.Play("E_Carry");
             }
+
+            Debug.Log("<color=magenta>[BlackHood] ถึงตัวและอุ้มผู้เล่นทันที!</color>");
         }
     }
 
-    private void StartWalkingToTM()
+    public void StartWalkingToTM()
     {
         targetTM = FindNearestTM();
 
@@ -99,14 +103,13 @@ public class BlackHoodCarrySystem : MonoBehaviour
         }
 
         agent.isStopped = false;
-        agent.stoppingDistance = 0.5f; // ระยะประชิดจุดส่ง
+        agent.stoppingDistance = 0.5f;
         agent.SetDestination(targetTM.position);
     }
 
     private Transform FindNearestTM()
     {
         GameObject[] targets = GameObject.FindGameObjectsWithTag("TM");
-
         if (targets.Length == 0) return null;
 
         Transform nearest = null;
@@ -114,44 +117,49 @@ public class BlackHoodCarrySystem : MonoBehaviour
 
         foreach (GameObject target in targets)
         {
-            float distance = Vector3.Distance(
-                transform.position,
-                target.transform.position
-            );
-
+            float distance = Vector3.Distance(transform.position, target.transform.position);
             if (distance < nearestDistance)
             {
                 nearestDistance = distance;
                 nearest = target.transform;
             }
         }
-
         return nearest;
     }
 
     private void Update()
     {
-        // เช็คสถานะระหว่างเดินไปหาผู้เล่น (ก่อนจะอุ้ม)
-        if (!isCarrying && playerTransform != null && !agent.pathPending)
+        if (!isCarrying)
         {
-            // อัปเดตเป้าหมายหาผู้เล่นเรื่อยๆ จนกว่าจะถึงระยะหยุด
-            if (Vector3.Distance(transform.position, playerTransform.position) > stopDistance && agent.isStopped == false)
+            // พยายามเช็คเงื่อนไขการอุ้มตลอดเวลาในทุกๆ เฟรม ไม่ต้องรอให้หยุดเดินก่อน
+            TryCarryPlayer();
+
+            if (!isCarrying && playerTransform != null)
             {
-                agent.SetDestination(playerTransform.position);
+                float distance = Vector3.Distance(transform.position, playerTransform.position);
+
+                // อัปเดตเป้าหมายเดินตาม Player เรื่อยๆ ถ้ายังนอกระยะหยุด
+                if (distance > stopDistance)
+                {
+                    if (agent.isStopped) agent.isStopped = false;
+                    agent.SetDestination(playerTransform.position);
+                }
+                else
+                {
+                    // ถ้าอยู่ในระยะ stopDistance แล้ว ให้หยุดเดินเพื่อรอจังหวะอุ้ม (เลือดหมด)
+                    if (!agent.isStopped) agent.isStopped = true;
+                }
             }
         }
 
-        // เช็คสถานะตอนอุ้มผู้เล่นแล้ว และกำลังเดินไปส่งที่ TM
+        // จัดการเรื่องเดินไปจุด TM ต่อ
         if (!isCarrying || targetTM == null)
             return;
 
-        if (!agent.pathPending &&
-            agent.remainingDistance <= agent.stoppingDistance)
+        if (!agent.pathPending && agent.remainingDistance <= agent.stoppingDistance)
         {
             agent.isStopped = true;
             isCarrying = false;
-
-            Debug.Log("BlackHood: ถึง TM เรียบร้อยแม่!");
         }
     }
 }

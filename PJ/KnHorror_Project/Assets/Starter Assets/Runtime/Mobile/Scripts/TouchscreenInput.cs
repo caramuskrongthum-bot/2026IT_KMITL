@@ -61,13 +61,6 @@ public class TouchscreenInput : MonoBehaviour
             LookEvent.Invoke(mov * LookMagnitudeMultiplier);
         });
 
-        var jumpButton = m_Document.rootVisualElement.Q<VisualElement>("ButtonJump");
-        jumpButton.RegisterCallback<PointerEnterEvent>(evt => { JumpEvent.Invoke(true); });
-        jumpButton.RegisterCallback<PointerLeaveEvent>(evt => { JumpEvent.Invoke(false); });
-        
-        var sprintButton = m_Document.rootVisualElement.Q<VisualElement>("ButtonSprint");
-        sprintButton.RegisterCallback<PointerEnterEvent>(evt => { SprintEvent.Invoke(true); });
-        sprintButton.RegisterCallback<PointerLeaveEvent>(evt => { SprintEvent.Invoke(false); });
     }
 }
 public class VirtualJoystick

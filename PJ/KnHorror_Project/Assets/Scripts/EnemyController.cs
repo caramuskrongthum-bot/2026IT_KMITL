@@ -186,15 +186,6 @@ public class EnemyController : MonoBehaviour
         Vector3 awayFromPlayer = transform.position - playerTransform.position;
         awayFromPlayer.y = 0f;
         roamDirection = (awayFromPlayer + new Vector3(Random.Range(-1f, 1f), 0f, Random.Range(-1f, 1f))).normalized;
-
-        StartCoroutine(HandlePlayerDownRoutine());
-    }
-
-    private System.Collections.IEnumerator HandlePlayerDownRoutine()
-    {
-        if (playerAnimator != null) playerAnimator.applyRootMotion = true;
-        yield return new WaitForSeconds(1.5f);
-        if (playerAnimator != null) playerAnimator.applyRootMotion = false;
     }
 
     public void ResetPlayerDown()
