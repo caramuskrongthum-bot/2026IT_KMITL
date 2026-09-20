@@ -390,6 +390,7 @@ GameObject:
   - component: {fileID: 8902521844287951197}
   - component: {fileID: 8468622937117992693}
   - component: {fileID: 6111460521772158344}
+  - component: {fileID: 4988849178563250405}
   m_Layer: 0
   m_Name: Enemy
   m_TagString: Untagged
@@ -492,6 +493,21 @@ MonoBehaviour:
   enemyHealthBar: {fileID: 373806655061031348}
   enemyCanvas: {fileID: 2590850277021376361}
   playerTransform: {fileID: 0}
+  EventDead:
+    m_PersistentCalls:
+      m_Calls:
+      - m_Target: {fileID: 4988849178563250405}
+        m_TargetAssemblyTypeName: ItemDropper, Assembly-CSharp
+        m_MethodName: DropTargetItem
+        m_Mode: 1
+        m_Arguments:
+          m_ObjectArgument: {fileID: 0}
+          m_ObjectArgumentAssemblyTypeName: UnityEngine.Object, UnityEngine
+          m_IntArgument: 0
+          m_FloatArgument: 0
+          m_StringArgument: 
+          m_BoolArgument: 0
+        m_CallState: 2
 --- !u!136 &6111460521772158344
 CapsuleCollider:
   m_ObjectHideFlags: 0
@@ -515,3 +531,23 @@ CapsuleCollider:
   m_Height: 2
   m_Direction: 1
   m_Center: {x: 0, y: 0, z: 0}
+--- !u!114 &4988849178563250405
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 6002001403532770039}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 4b581fa6fa80455428e1acdda7179084, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::ItemDropper
+  targetItemData: {fileID: 11400000, guid: 939c859e16f894b40a14384bb1af3193, type: 2}
+  baseItemPrefab: {fileID: 5245914690577604529, guid: 461952baf5cc9784ca11ad659b034e6b, type: 3}
+  bounceForceMin: 2
+  bounceForceMax: 4
+  spreadForceMin: 1
+  spreadForceMax: 3
+  torqueForce: 5
+  spawnHeightOffset: 0.3

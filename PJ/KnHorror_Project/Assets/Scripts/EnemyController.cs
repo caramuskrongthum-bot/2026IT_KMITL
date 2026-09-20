@@ -1,45 +1,28 @@
 ﻿using UnityEngine;
+using UnityEngine.Events;
 using UnityEngine.UI; // จำเป็นสำหรับการใช้งาน UI Slider
 
 public class EnemyController : MonoBehaviour
 {
-    [Header("✨ Detection & Attack Settings ✨")]
-    [Tooltip("ระยะที่ศัตรูจะเริ่มมองเห็นและเดินตามผู้เล่น")]
     public float detectionRange = 10f;
-
-    [Tooltip("ระยะที่ศัตรูจะหยุดเดินแล้วเริ่มทำการโจมตี")]
     public float attackRange = 2f;
-
-    [Tooltip("ความเร็วในการเดิน")]
     public float moveSpeed = 3.5f;
-
-    [Tooltip("ดาเมจที่จะทำต่อการโจมตี 1 ครั้ง")]
     public int attackDamage = 25;
-
-    [Tooltip("ความถี่ในการโจมตี")]
     public float attackCooldown = 1.5f;
-
-    [Header("✨ Monster Stats & Combat ✨")]
     public int maxHealth = 100;
     private int currentHealth;
-    public float knockbackForce = 5f; // ความแรงตอนกระเด็น
-
-    [Header("✨ UI Settings ✨")]
-    [Tooltip("Canvas หรือ Slider ของเลือดมอนสเตอร์")]
+    public float knockbackForce = 5f;
     public Slider enemyHealthBar;
-    public Canvas enemyCanvas; // เอาไว้ปิด-เปิดเวลาผู้เล่นอยู่นอกระยะ
-
-    [Header("✨ References ✨")]
+    public Canvas enemyCanvas;
     public Transform playerTransform;
-
     private Animator playerAnimator;
     private PlayerStatus playerStatus;
     private CharacterController playerController;
-    private Rigidbody rb; // ใช้สำหรับทำระบบกระเด็น
-
+    private Rigidbody rb;
     private float lastAttackTime;
     private bool isPlayerDown = false;
     private Vector3 roamDirection;
+    public UnityEvent EventDead;
 
     private void Start()
     {
@@ -53,7 +36,6 @@ public class EnemyController : MonoBehaviour
             enemyHealthBar.value = currentHealth;
         }
 
-        // ซ่อนหลอดเลือดตอนเริ่มต้น (ยังไม่เห็นผู้เล่น)
         ToggleHealthBar(false);
 
         FindPlayer();
@@ -101,19 +83,16 @@ public class EnemyController : MonoBehaviour
             ToggleHealthBar(false);
         }
 
-        // ถ้าผู้เล่นล้ม หรือ เลือดผู้เล่นหมดแล้ว ให้มอนสเตอร์เดินไปทางอื่นแทน (Roam)
         if (isPlayerDown || isPlayerDead)
         {
             RoamAwayFromPlayer();
             return;
         }
 
-        // เดินเข้าหา Player (ถ้าผู้เล่นยังไม่ตาย)
         if (distanceToPlayer <= detectionRange && distanceToPlayer > attackRange)
         {
             MoveTowardsPlayer();
         }
-        // อยู่ในระยะโจมตี
         else if (distanceToPlayer <= attackRange)
         {
             LookAtPlayer();
@@ -195,7 +174,6 @@ public class EnemyController : MonoBehaviour
         lastAttackTime = Time.time;
     }
 
-    // ระบบตรวจจับการชนกับ HitBoxForMonster ของผู้เล่น
     private void OnTriggerEnter(Collider other)
     {
         if (other.CompareTag("HitBoxForMonster"))
@@ -252,7 +230,7 @@ public class EnemyController : MonoBehaviour
 
     private void Die()
     {
-        Debug.Log("💀 มอนสเตอร์ตุยเย่แล้วแม่!");
+        EventDead.Invoke();
         Destroy(gameObject);
     }
 

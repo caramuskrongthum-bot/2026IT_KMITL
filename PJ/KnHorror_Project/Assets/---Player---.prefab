@@ -5324,7 +5324,7 @@ GameObject:
   m_Component:
   - component: {fileID: 926662882898658139}
   - component: {fileID: 3338927567048156530}
-  m_Layer: 7
+  m_Layer: 0
   m_Name: Injured
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -5359,7 +5359,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Unity.RenderPipelines.Core.Runtime::UnityEngine.Rendering.Volume
   m_IsGlobal: 1
-  priority: 1
+  priority: 10
   blendDistance: 0
   weight: 0
   sharedProfile: {fileID: 11400000, guid: 0f4cbc4014616f9448ce8ea524e610dc, type: 2}
@@ -5388,6 +5388,7 @@ GameObject:
   - component: {fileID: 4434934401573442216}
   - component: {fileID: 3844744488119383809}
   - component: {fileID: 6792049191493081124}
+  - component: {fileID: 1463289343456706648}
   m_Layer: 7
   m_Name: ---Player---
   m_TagString: Player
@@ -5679,8 +5680,8 @@ MonoBehaviour:
   AC: {fileID: 8300000, guid: f09d536560d2e514c9c4ef337289d76a, type: 3}
   Trail: {fileID: 532001162656950868}
   layerTransitionSpeed: 5
-  normalFogDensity: 0.4
-  item2FogDensity: 0.123
+  normalFogDensity: 0.6
+  item2FogDensity: 0.2
   fogTransitionSpeed: 2
   attackCooldown: 1
 --- !u!114 &307511871536388833
@@ -5696,6 +5697,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: '::'
   Fire1: {fileID: -7022143741481452237, guid: 052faaac586de48259a63d0c4782560b, type: 3}
+  Fire2: {fileID: 8768478250338647464, guid: 052faaac586de48259a63d0c4782560b, type: 3}
 --- !u!114 &8507097195727377360
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -5755,8 +5757,8 @@ MonoBehaviour:
   SFX_Damage: {fileID: 8300000, guid: 2071d142ef7745f429717fb46ffa4cf2, type: 3}
   Volume: {fileID: 3338927567048156530}
   HoodBlackPrefab: {fileID: 2416379045877363092, guid: c65aa0c3885daea458eba95fa084ccac, type: 3}
-  PlayerInventoryHandler: {fileID: 0}
-  lerpSpeed: 15
+  PlayerInventoryHandler: {fileID: 4614178684196101420}
+  lerpSpeed: 20
 --- !u!54 &6710391716690907439
 Rigidbody:
   m_ObjectHideFlags: 0
@@ -6013,6 +6015,25 @@ AudioReverbZone:
   m_Density: 100
   m_LFReference: 250
   m_RoomLF: 0
+--- !u!114 &1463289343456706648
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 3281770705231912518}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: a010a847c7d49cb43a017bbba0b258bb, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::PlayerItemPicker
+  playerCamera: {fileID: 0}
+  playerController: {fileID: 307511871536388833}
+  pickupRange: 3
+  itemLayer:
+    serializedVersion: 2
+    m_Bits: 256
+  pickupPromptUI: {fileID: 0}
 --- !u!1 &3778034149975909921
 GameObject:
   m_ObjectHideFlags: 0

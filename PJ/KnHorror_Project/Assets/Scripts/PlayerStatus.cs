@@ -35,8 +35,16 @@ public class PlayerStatus : MonoBehaviour
     {
         if (HealthBar != null)
         {
-            // ทำให้เลือดลด/เพิ่มแบบสมูท (Smooth Lerp)
-            HealthBar.value = Mathf.Lerp(HealthBar.value, targetHealth, Time.deltaTime * lerpSpeed);
+            // ถ้า targetHealth เป็น 0 ให้หลอดเลือดดิ่งลง 0 ทันที ไม่ให้คาอยู่เศษ 1
+            if (targetHealth <= 0f)
+            {
+                HealthBar.value = 0f;
+            }
+            else
+            {
+                // ทำให้เลือดลด/เพิ่มแบบสมูท (Smooth Lerp ปกติ)
+                HealthBar.value = Mathf.Lerp(HealthBar.value, targetHealth, Time.deltaTime * lerpSpeed);
+            }
         }
 
         // ทำให้ Volume (Post-processing) เปลี่ยนความหนักหน่วงแบบสมูท

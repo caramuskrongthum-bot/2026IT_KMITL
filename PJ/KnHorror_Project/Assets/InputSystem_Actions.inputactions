@@ -88,6 +88,15 @@
                     "initialStateCheck": false
                 },
                 {
+                    "name": "Fire2",
+                    "type": "Button",
+                    "id": "a33e158b-50a6-426a-b0e7-8b98502f2dec",
+                    "expectedControlType": "",
+                    "processors": "",
+                    "interactions": "",
+                    "initialStateCheck": false
+                },
+                {
                     "name": "Resistion",
                     "type": "Button",
                     "id": "a7c682ac-7efb-4fe7-ac9d-993d128a07d8",
@@ -551,6 +560,28 @@
                     "processors": "",
                     "groups": "",
                     "action": "BackINV",
+                    "isComposite": false,
+                    "isPartOfComposite": false
+                },
+                {
+                    "name": "",
+                    "id": "e7852191-2112-4aee-9e6d-0e04e4bc3e45",
+                    "path": "<Keyboard>/e",
+                    "interactions": "",
+                    "processors": "",
+                    "groups": "",
+                    "action": "Fire2",
+                    "isComposite": false,
+                    "isPartOfComposite": false
+                },
+                {
+                    "name": "",
+                    "id": "0b25cfe7-446a-4fe1-a45b-2cdedb7d4557",
+                    "path": "<Gamepad>/buttonNorth",
+                    "interactions": "",
+                    "processors": "",
+                    "groups": "",
+                    "action": "Fire2",
                     "isComposite": false,
                     "isPartOfComposite": false
                 }
