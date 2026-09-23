@@ -12,6 +12,10 @@ public class RoomManager : MonoBehaviour
 
     public void LoadNextRoom()
     {
+        if (ScoreManager.Instance != null)
+        {
+            ScoreManager.Instance.AddPassedRoom();
+        }
         IndexRoom++;
         GameObject r = Instantiate(PrefabRoom[IndexRandom = Random.Range(0,PrefabRoom.Length)]);
         NewRoomLoadPos.z += 10;

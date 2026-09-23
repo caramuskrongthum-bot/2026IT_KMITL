@@ -9,6 +9,7 @@ TagManager:
   - TM
   - HitBoxForMonster
   - Ui_Manager
+  - BlackHood
   layers:
   - Default
   - TransparentFX

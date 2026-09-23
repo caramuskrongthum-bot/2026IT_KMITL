@@ -14,6 +14,8 @@ public class Door : MonoBehaviour
     public AudioSource AS;
     public AudioClip AC;
 
+    public GameObject Ui_Interactable;
+
     private void OnTriggerStay(Collider other)
     {
         if (!other.CompareTag("Player"))
@@ -65,6 +67,8 @@ public class Door : MonoBehaviour
 
     private IEnumerator TeleportPlayer(GameObject Player)
     {
+        Ui_Interactable.SetActive(false);
+
         ThirdPersonController TPC =
             Player.GetComponent<ThirdPersonController>();
 

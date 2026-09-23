@@ -1,33 +1,60 @@
 ﻿using UnityEngine;
+using UnityEngine.AI; 
 using UnityEngine.Events;
-using UnityEngine.UI; // จำเป็นสำหรับการใช้งาน UI Slider
+using UnityEngine.UI;
+using System.Collections;
 
+[RequireComponent(typeof(NavMeshAgent))] // บังคับให้มี NavMeshAgent บนตัวมอนสเตอร์
 public class EnemyController : MonoBehaviour
 {
+    [Header("Detection & Combat Settings")]
     public float detectionRange = 10f;
     public float attackRange = 2f;
-    public float moveSpeed = 3.5f;
-    public int attackDamage = 25;
     public float attackCooldown = 1.5f;
+    public int attackDamage = 25;
     public int maxHealth = 100;
     private int currentHealth;
-    public float knockbackForce = 5f;
+
+    [Header("Spawn Delay Settings")]
+    public float startDelay = 2f; // ⏳ เวลาที่รอก่อนจะเริ่มเปิดใช้งาน AI
+    private bool isAimedActive = false; // สถานะว่า AI พร้อมทำงานหรือยัง
+
+    [Header("UI & Effect Settings")]
     public Slider enemyHealthBar;
     public Canvas enemyCanvas;
+
+    [Header("Animation Settings")]
+    public Animator animator; // 🎬 สำหรับควบคุมอนิเมชั่น (ลาก Animator Component มาใส่ หรือจะให้มัน GetComponent อัตโนมัติก็ได้)
+
+    [Header("Target References")]
     public Transform playerTransform;
-    private Animator playerAnimator;
     private PlayerStatus playerStatus;
-    private CharacterController playerController;
-    private Rigidbody rb;
-    private float lastAttackTime;
-    private bool isPlayerDown = false;
-    private Vector3 roamDirection;
+
+    [Header("Events")]
     public UnityEvent EventDead;
 
+    private NavMeshAgent agent;
+    private float lastAttackTime;
+    private bool isPlayerDown = false;
+    private Vector3 roamPosition;
+    private bool isDead = false; // 💀 ตัวแปรเช็คสถานะความตาย
+
+    public GameObject VFX_Blood;
+    public Transform VFX_Player;
+
+    public AudioSource AudioSource;
+    public AudioClip AudioClip_SFX_Dead;
+    public AudioClip AudioClip_SFX_Attack;
     private void Start()
     {
         currentHealth = maxHealth;
-        rb = GetComponent<Rigidbody>();
+        agent = GetComponent<NavMeshAgent>();
+
+        // ถ้าไม่ได้ลาก Animator ไว้ใน Inspector ให้ลองค้นหาจากตัวมอนสเตอร์อัตโนมัติ
+        if (animator == null)
+        {
+            animator = GetComponent<Animator>();
+        }
 
         // ตั้งค่า Slider เริ่มต้น
         if (enemyHealthBar != null)
@@ -37,8 +64,26 @@ public class EnemyController : MonoBehaviour
         }
 
         ToggleHealthBar(false);
-
         FindPlayer();
+
+        // 🛑 ปิดการใช้งาน NavMeshAgent ชั่วคราวในช่วงแรก
+        agent.enabled = false;
+
+        // เริ่มนับเวลาถอยหลังเพื่อเปิดใช้งาน AI
+        Invoke("ActivateAI", startDelay);
+    }
+
+    private void ActivateAI()
+    {
+        // ถ้าตายไปตั้งแต่ยังไม่เริ่ม ก็ไม่ต้องเปิด AI
+        if (isDead) return;
+
+        // ✅ เปิดใช้งาน NavMeshAgent หลังจากครบเวลา
+        if (agent != null)
+        {
+            agent.enabled = true;
+        }
+        isAimedActive = true;
     }
 
     private void FindPlayer()
@@ -53,166 +98,174 @@ public class EnemyController : MonoBehaviour
 
         playerTransform = playerObj.transform;
         playerStatus = playerObj.GetComponent<PlayerStatus>();
-        playerController = playerObj.GetComponent<CharacterController>();
-
-        if (playerAnimator == null)
-        {
-            playerAnimator = playerObj.GetComponentInChildren<Animator>();
-        }
     }
 
     private void Update()
     {
+        // 💀 ถ้ายตายแล้ว ให้หยุดการทำงานใน Update ทั้งหมดทันที
+        if (isDead) return;
+
+        // ⏳ ถ้ายังไม่หมดเวลา 2 วินาที จะไม่ให้มอนสเตอร์ทำพฤติกรรมใดๆ
+        if (!isAimedActive) return;
+
         if (playerTransform == null || playerStatus == null)
         {
-            return;
+            FindPlayer();
+            if (playerTransform == null || playerStatus == null) return;
         }
 
-        // 🛑 เช็คว่าผู้เล่นเลือดหมดหรือยัง
-        bool isPlayerDead = (playerStatus.HealthBar != null && playerStatus.HealthBar.value <= 0f);
-
+        // เช็คว่าผู้เล่นหมดสภาพหรือยัง
+        bool isPlayerDead = playerStatus.IsPlayerDead();
         float distanceToPlayer = Vector3.Distance(transform.position, playerTransform.position);
 
-        // เช็คว่าอยู่ในระยะแสดงหลอดเลือดไหม (ใช้ detectionRange เป็นเกณฑ์)
-        if (distanceToPlayer <= detectionRange)
-        {
-            ToggleHealthBar(true);
-        }
-        else
-        {
-            ToggleHealthBar(false);
-        }
+        // แสดง/ซ่อน หลอดเลือดตามระยะ
+        ToggleHealthBar(distanceToPlayer <= detectionRange);
 
+        // ถ้าผู้เล่นล้มหรือตาย ให้เดินหนีแบบปลอดภัยไม่หลุดแมพ
         if (isPlayerDown || isPlayerDead)
         {
             RoamAwayFromPlayer();
             return;
         }
 
-        if (distanceToPlayer <= detectionRange && distanceToPlayer > attackRange)
+        // กรณีเจอ Player และอยู่ในระยะตรวจจับ
+        if (distanceToPlayer <= detectionRange)
         {
-            MoveTowardsPlayer();
-        }
-        else if (distanceToPlayer <= attackRange)
-        {
-            LookAtPlayer();
-
-            if (Time.time >= lastAttackTime + attackCooldown)
+            if (distanceToPlayer > attackRange)
             {
-                Vector3 direction = playerTransform.position - transform.position;
-                direction.y = 0f;
-
-                AttackPlayer(direction);
-                lastAttackTime = Time.time;
+                // เดินไล่ล่าตาม NavMesh
+                MoveTowardsPlayer();
+            }
+            else
+            {
+                // หยุดเดินและหันหน้าโจมตี
+                LookAndAttackPlayer();
+            }
+        }
+        else
+        {
+            // นอกระยะตรวจจับ ให้หยุดเดิน
+            if (agent.isOnNavMesh && !agent.isStopped)
+            {
+                agent.isStopped = true;
             }
         }
     }
 
     private void MoveTowardsPlayer()
     {
-        Vector3 direction = playerTransform.position - transform.position;
-        direction.y = 0f;
+        if (!agent.enabled || !agent.isOnNavMesh) return;
 
-        if (direction.sqrMagnitude <= 0.001f) return;
-
-        direction.Normalize();
-
-        Quaternion targetRotation = Quaternion.LookRotation(direction);
-        transform.rotation = Quaternion.Slerp(transform.rotation, targetRotation, Time.deltaTime * 10f);
-
-        transform.position += direction * moveSpeed * Time.deltaTime;
+        agent.isStopped = false;
+        agent.SetDestination(playerTransform.position);
     }
 
-    private void LookAtPlayer()
+    private void LookAndAttackPlayer()
     {
-        Vector3 direction = playerTransform.position - transform.position;
+        if (agent.enabled && agent.isOnNavMesh)
+        {
+            agent.isStopped = true;
+        }
+
+        // หันหน้าไปหา Player
+        Vector3 direction = (playerTransform.position - transform.position).normalized;
         direction.y = 0f;
+        if (direction != Vector3.zero)
+        {
+            Quaternion targetRotation = Quaternion.LookRotation(direction);
+            transform.rotation = Quaternion.Slerp(transform.rotation, targetRotation, Time.deltaTime * 10f);
+        }
 
-        if (direction.sqrMagnitude <= 0.001f) return;
-
-        direction.Normalize();
-
-        Quaternion targetRotation = Quaternion.LookRotation(direction);
-        transform.rotation = Quaternion.Slerp(transform.rotation, targetRotation, Time.deltaTime * 10f);
+        // โจมตีตาม Cooldown
+        if (Time.time >= lastAttackTime + attackCooldown)
+        {
+            AttackPlayer();
+            lastAttackTime = Time.time;
+        }
     }
 
     private void RoamAwayFromPlayer()
     {
-        if (roamDirection == Vector3.zero) return;
+        if (!agent.enabled || !agent.isOnNavMesh) return;
 
-        Quaternion targetRotation = Quaternion.LookRotation(roamDirection);
-        transform.rotation = Quaternion.Slerp(transform.rotation, targetRotation, Time.deltaTime * 10f);
-
-        transform.position += roamDirection * moveSpeed * Time.deltaTime;
-    }
-
-    private void AttackPlayer(Vector3 hitDirection)
-    {
-        if (playerStatus == null) return;
-        if (playerStatus.HealthBar != null && playerStatus.HealthBar.value <= 0f) return;
-        playerStatus.DamageToPlayer(attackDamage);
-        if (playerStatus.HealthBar != null && playerStatus.HealthBar.value <= 0f)
+        // สุ่มจุดถอยหนีให้อยู่บน NavMesh เพื่อไม่ให้หลุดแมพ
+        if (roamPosition == Vector3.zero || agent.remainingDistance <= agent.stoppingDistance)
         {
-            PlayerDown();
+            Vector3 awayDirection = (transform.position - playerTransform.position).normalized;
+            Vector3 randomPoint = transform.position + awayDirection * 8f + Random.insideUnitSphere * 3f;
+
+            NavMeshHit hit;
+            if (NavMesh.SamplePosition(randomPoint, out hit, 5f, NavMesh.AllAreas))
+            {
+                roamPosition = hit.position;
+                agent.isStopped = false;
+                agent.SetDestination(roamPosition);
+            }
         }
     }
 
-    private void PlayerDown()
+    private void AttackPlayer()
     {
-        if (isPlayerDown) return;
+        if (playerStatus == null || playerStatus.IsPlayerDead()) return;
+        AudioSource.PlayOneShot(AudioClip_SFX_Attack);
+        animator.Play("Attack");
+        playerStatus.DamageToPlayer(attackDamage);
 
-        isPlayerDown = true;
-        Vector3 awayFromPlayer = transform.position - playerTransform.position;
-        awayFromPlayer.y = 0f;
-        roamDirection = (awayFromPlayer + new Vector3(Random.Range(-1f, 1f), 0f, Random.Range(-1f, 1f))).normalized;
+        if (playerStatus.IsPlayerDead())
+        {
+            isPlayerDown = true;
+        }
     }
 
     public void ResetPlayerDown()
     {
         isPlayerDown = false;
-        roamDirection = Vector3.zero;
+        roamPosition = Vector3.zero;
         lastAttackTime = Time.time;
     }
 
     private void OnTriggerEnter(Collider other)
     {
+        // ถ้ายตายแล้วจะไม่รับดาเมจเพิ่ม
+        if (isDead) return;
+
         if (other.CompareTag("HitBoxForMonster"))
         {
-            TakeDamage(25, other.transform.position);
+            TakeDamage(25);
         }
     }
 
-    public void TakeDamage(int damage, Vector3 attackerPosition)
+    public void TakeDamage(int damage)
     {
+        if (isDead) return;
+        AudioSource.PlayOneShot(AudioClip_SFX_Dead);
         currentHealth -= damage;
         currentHealth = Mathf.Clamp(currentHealth, 0, maxHealth);
 
-        // อัปเดตค่า Slider เลือดมอนสเตอร์
         if (enemyHealthBar != null)
         {
             enemyHealthBar.value = currentHealth;
         }
 
-        // แสดงหลอดเลือดทันทีเมื่อโดนตี
         ToggleHealthBar(true);
-
-        // ทำการกระเด็นถอยหลัง (Knockback)
-        Vector3 knockbackDir = (transform.position - attackerPosition).normalized;
-        knockbackDir.y = 0f;
-
-        if (rb != null)
-        {
-            rb.AddForce(knockbackDir * knockbackForce, ForceMode.Impulse);
-        }
-        else
-        {
-            transform.position += knockbackDir * (knockbackForce * 0.2f);
-        }
-
-        // เช็คว่าเลือดหมดหรือยัง
         if (currentHealth <= 0)
         {
             Die();
+            return;
+        }
+        StartCoroutine(DamageRoutine());
+    }
+    private IEnumerator DamageRoutine()
+    {
+        if (VFX_Blood != null && VFX_Player != null)
+        {
+            GameObject blood = Instantiate(VFX_Blood);
+            blood.transform.position = VFX_Player.transform.position;
+        }
+        yield return new WaitForSeconds(1f);
+        if (AudioSource != null && !AudioSource.isPlaying)
+        {
+            AudioSource.Play();
         }
     }
 
@@ -230,8 +283,33 @@ public class EnemyController : MonoBehaviour
 
     private void Die()
     {
+        if (isDead) return; // ป้องกันการเรียกซ้ำ
+        isDead = true;
+
+        // 🔊 ใช้ PlayClipAtPoint เพื่อให้เสียงเล่นลอยค้างไว้ แม้ตัวมอนสเตอร์จะตายหรือถูกทำลายไปแล้ว
+        if (AudioClip_SFX_Dead != null)
+        {
+            AudioSource.PlayClipAtPoint(AudioClip_SFX_Dead, transform.position);
+        }
+
+        if (agent != null && agent.isOnNavMesh)
+        {
+            agent.isStopped = true;
+            agent.enabled = false;
+        }
+
+        ToggleHealthBar(false);
+        if (animator != null)
+        {
+            animator.Play("Dead_00");
+        }
+
+        if (ScoreManager.Instance != null)
+        {
+            ScoreManager.Instance.AddMonsterKill();
+        }
+
         EventDead.Invoke();
-        Destroy(gameObject);
     }
 
     private void OnDrawGizmosSelected()

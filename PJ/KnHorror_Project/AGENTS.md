@@ -2,7 +2,7 @@
 - Project name: KnHorror_Project
 - Unity version: Unity 6000.3.16f1
 - Active game object:
-  - Name: List_Item
+  - Name: Door
   - Tag: Untagged
-  - Layer: UI
+  - Layer: Default
 <!-- UNITY CODE ASSIST INSTRUCTIONS END -->

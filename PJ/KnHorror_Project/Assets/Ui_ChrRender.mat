@@ -97,7 +97,7 @@ Material:
     - _BlendModePreserveSpecular: 1
     - _BumpScale: 1
     - _CausticScale: 1.43
-    - _CausticStrength: 0.45
+    - _CausticStrength: 0
     - _ClearCoatMask: 0
     - _ClearCoatSmoothness: 0
     - _Cull: 2
@@ -105,7 +105,7 @@ Material:
     - _DetailAlbedoMapScale: 1
     - _DetailNormalMapScale: 1
     - _Direction: 0
-    - _Distortion: 0.007
+    - _Distortion: 0.0052
     - _DistortionSpeed: 1.07
     - _DropDensity: 11.9
     - _DropSpeed: 0.15
@@ -161,7 +161,7 @@ Material:
     - _ZWrite: 1
     m_Colors:
     - _BaseColor: {r: 1, g: 1, b: 1, a: 1}
-    - _CausticColor: {r: 0.24528301, g: 0.24528301, b: 0.24528301, a: 0.25}
+    - _CausticColor: {r: 0.49056602, g: 0.49056602, b: 0.49056602, a: 1}
     - _Color: {r: 1, g: 1, b: 1, a: 1}
     - _EmissionColor: {r: 0, g: 0, b: 0, a: 1}
     - _GlassColor: {r: 1, g: 0, b: 0, a: 1}
