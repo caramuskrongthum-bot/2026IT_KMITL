@@ -1,10 +1,10 @@
 ﻿using UnityEngine;
-using UnityEngine.AI; 
+using UnityEngine.AI;
 using UnityEngine.Events;
 using UnityEngine.UI;
 using System.Collections;
 
-[RequireComponent(typeof(NavMeshAgent))] // บังคับให้มี NavMeshAgent บนตัวมอนสเตอร์
+[RequireComponent(typeof(NavMeshAgent))]
 public class EnemyController : MonoBehaviour
 {
     [Header("Detection & Combat Settings")]
@@ -16,15 +16,15 @@ public class EnemyController : MonoBehaviour
     private int currentHealth;
 
     [Header("Spawn Delay Settings")]
-    public float startDelay = 2f; // ⏳ เวลาที่รอก่อนจะเริ่มเปิดใช้งาน AI
-    private bool isAimedActive = false; // สถานะว่า AI พร้อมทำงานหรือยัง
+    public float startDelay = 2f;
+    private bool isAimedActive = false;
 
     [Header("UI & Effect Settings")]
     public Slider enemyHealthBar;
     public Canvas enemyCanvas;
 
     [Header("Animation Settings")]
-    public Animator animator; // 🎬 สำหรับควบคุมอนิเมชั่น (ลาก Animator Component มาใส่ หรือจะให้มัน GetComponent อัตโนมัติก็ได้)
+    public Animator animator;
 
     [Header("Target References")]
     public Transform playerTransform;
@@ -32,12 +32,13 @@ public class EnemyController : MonoBehaviour
 
     [Header("Events")]
     public UnityEvent EventDead;
+    public UnityEvent EventEvery5Seconds; // ⏱️ อีเวนต์ที่จะทำงานทุกๆ 5 วินาที
 
     private NavMeshAgent agent;
     private float lastAttackTime;
     private bool isPlayerDown = false;
     private Vector3 roamPosition;
-    private bool isDead = false; // 💀 ตัวแปรเช็คสถานะความตาย
+    private bool isDead = false;
 
     public GameObject VFX_Blood;
     public Transform VFX_Player;
@@ -45,18 +46,33 @@ public class EnemyController : MonoBehaviour
     public AudioSource AudioSource;
     public AudioClip AudioClip_SFX_Dead;
     public AudioClip AudioClip_SFX_Attack;
+
+    [Header("Jump Attack Settings")]
+    public float jumpSpeed = 5f;
+    public float jumpHeight = 2f;
+    private bool isJumping = false;
+
+    public float WaitEvent;
+
+    [Header("Destroy Settings")]
+    public float destroyDelay = 1.5f; // ⏳ เวลาหลังจากตายก่อนที่จะ Destroy (1-2 วินาที)
+
     private void Start()
     {
+        // ✨ ดึงค่าโบนัสดาเมจมอนสเตอร์จาก GameManager มาบวกเพิ่ม
+        if (GameManager.Instance != null)
+        {
+            attackDamage += GameManager.Instance.monsterDamageBonus;
+        }
+
         currentHealth = maxHealth;
         agent = GetComponent<NavMeshAgent>();
 
-        // ถ้าไม่ได้ลาก Animator ไว้ใน Inspector ให้ลองค้นหาจากตัวมอนสเตอร์อัตโนมัติ
         if (animator == null)
         {
             animator = GetComponent<Animator>();
         }
 
-        // ตั้งค่า Slider เริ่มต้น
         if (enemyHealthBar != null)
         {
             enemyHealthBar.maxValue = maxHealth;
@@ -66,19 +82,17 @@ public class EnemyController : MonoBehaviour
         ToggleHealthBar(false);
         FindPlayer();
 
-        // 🛑 ปิดการใช้งาน NavMeshAgent ชั่วคราวในช่วงแรก
         agent.enabled = false;
-
-        // เริ่มนับเวลาถอยหลังเพื่อเปิดใช้งาน AI
         Invoke("ActivateAI", startDelay);
+
+        // ⏱️ เริ่มต้นลูปการทำงานทุกๆ 5 วินาที
+        StartCoroutine(TimerEventRoutine());
     }
 
     private void ActivateAI()
     {
-        // ถ้าตายไปตั้งแต่ยังไม่เริ่ม ก็ไม่ต้องเปิด AI
         if (isDead) return;
 
-        // ✅ เปิดใช้งาน NavMeshAgent หลังจากครบเวลา
         if (agent != null)
         {
             agent.enabled = true;
@@ -102,11 +116,7 @@ public class EnemyController : MonoBehaviour
 
     private void Update()
     {
-        // 💀 ถ้ายตายแล้ว ให้หยุดการทำงานใน Update ทั้งหมดทันที
-        if (isDead) return;
-
-        // ⏳ ถ้ายังไม่หมดเวลา 2 วินาที จะไม่ให้มอนสเตอร์ทำพฤติกรรมใดๆ
-        if (!isAimedActive) return;
+        if (isDead || !isAimedActive) return;
 
         if (playerTransform == null || playerStatus == null)
         {
@@ -114,40 +124,47 @@ public class EnemyController : MonoBehaviour
             if (playerTransform == null || playerStatus == null) return;
         }
 
-        // เช็คว่าผู้เล่นหมดสภาพหรือยัง
         bool isPlayerDead = playerStatus.IsPlayerDead();
         float distanceToPlayer = Vector3.Distance(transform.position, playerTransform.position);
 
-        // แสดง/ซ่อน หลอดเลือดตามระยะ
         ToggleHealthBar(distanceToPlayer <= detectionRange);
 
-        // ถ้าผู้เล่นล้มหรือตาย ให้เดินหนีแบบปลอดภัยไม่หลุดแมพ
         if (isPlayerDown || isPlayerDead)
         {
             RoamAwayFromPlayer();
             return;
         }
 
-        // กรณีเจอ Player และอยู่ในระยะตรวจจับ
         if (distanceToPlayer <= detectionRange)
         {
             if (distanceToPlayer > attackRange)
             {
-                // เดินไล่ล่าตาม NavMesh
                 MoveTowardsPlayer();
             }
             else
             {
-                // หยุดเดินและหันหน้าโจมตี
                 LookAndAttackPlayer();
             }
         }
         else
         {
-            // นอกระยะตรวจจับ ให้หยุดเดิน
             if (agent.isOnNavMesh && !agent.isStopped)
             {
                 agent.isStopped = true;
+            }
+        }
+    }
+
+    private IEnumerator TimerEventRoutine()
+    {
+        while (true)
+        {
+            yield return new WaitForSeconds(WaitEvent);
+
+            // ทำงานเฉพาะตอนที่ AI เปิดใช้งานแล้ว และยังไม่ตาย
+            if (isAimedActive && !isDead)
+            {
+                EventEvery5Seconds.Invoke();
             }
         }
     }
@@ -167,7 +184,6 @@ public class EnemyController : MonoBehaviour
             agent.isStopped = true;
         }
 
-        // หันหน้าไปหา Player
         Vector3 direction = (playerTransform.position - transform.position).normalized;
         direction.y = 0f;
         if (direction != Vector3.zero)
@@ -176,7 +192,6 @@ public class EnemyController : MonoBehaviour
             transform.rotation = Quaternion.Slerp(transform.rotation, targetRotation, Time.deltaTime * 10f);
         }
 
-        // โจมตีตาม Cooldown
         if (Time.time >= lastAttackTime + attackCooldown)
         {
             AttackPlayer();
@@ -188,7 +203,6 @@ public class EnemyController : MonoBehaviour
     {
         if (!agent.enabled || !agent.isOnNavMesh) return;
 
-        // สุ่มจุดถอยหนีให้อยู่บน NavMesh เพื่อไม่ให้หลุดแมพ
         if (roamPosition == Vector3.zero || agent.remainingDistance <= agent.stoppingDistance)
         {
             Vector3 awayDirection = (transform.position - playerTransform.position).normalized;
@@ -226,7 +240,6 @@ public class EnemyController : MonoBehaviour
 
     private void OnTriggerEnter(Collider other)
     {
-        // ถ้ายตายแล้วจะไม่รับดาเมจเพิ่ม
         if (isDead) return;
 
         if (other.CompareTag("HitBoxForMonster"))
@@ -255,6 +268,7 @@ public class EnemyController : MonoBehaviour
         }
         StartCoroutine(DamageRoutine());
     }
+
     private IEnumerator DamageRoutine()
     {
         if (VFX_Blood != null && VFX_Player != null)
@@ -283,10 +297,9 @@ public class EnemyController : MonoBehaviour
 
     private void Die()
     {
-        if (isDead) return; // ป้องกันการเรียกซ้ำ
+        if (isDead) return;
         isDead = true;
 
-        // 🔊 ใช้ PlayClipAtPoint เพื่อให้เสียงเล่นลอยค้างไว้ แม้ตัวมอนสเตอร์จะตายหรือถูกทำลายไปแล้ว
         if (AudioClip_SFX_Dead != null)
         {
             AudioSource.PlayClipAtPoint(AudioClip_SFX_Dead, transform.position);
@@ -310,6 +323,74 @@ public class EnemyController : MonoBehaviour
         }
 
         EventDead.Invoke();
+
+        // 🗑️ เริ่ม Coroutine เพื่อรอเวลาแล้วทำลาย GameObject ทิ้ง
+        StartCoroutine(DestroyRoutine());
+    }
+
+    // ⏳ Coroutine หน่วงเวลาก่อน Destroy ตัวละคร
+    private IEnumerator DestroyRoutine()
+    {
+        yield return new WaitForSeconds(destroyDelay);
+        Destroy(gameObject);
+    }
+
+    public void JumpAttackPlayer()
+    {
+        if (isDead || isJumping || playerTransform == null) return;
+
+        if (agent != null && agent.enabled)
+        {
+            agent.isStopped = true;
+            agent.enabled = false;
+        }
+
+        Vector3 startPos = transform.position;
+        Vector3 targetPos = playerTransform.position;
+
+        Vector3 lookDir = (targetPos - startPos);
+        lookDir.y = 0f;
+        if (lookDir != Vector3.zero)
+        {
+            transform.rotation = Quaternion.LookRotation(lookDir);
+        }
+
+        if (animator != null)
+        {
+            animator.Play("Jump");
+        }
+
+        StartCoroutine(JumpRoutine(startPos, targetPos));
+    }
+
+    private IEnumerator JumpRoutine(Vector3 startPos, Vector3 targetPos)
+    {
+        isJumping = true;
+        float journeyLength = Vector3.Distance(new Vector3(startPos.x, 0, startPos.z), new Vector3(targetPos.x, 0, targetPos.z));
+        float totalTime = journeyLength / jumpSpeed;
+        float elapsedTime = 0f;
+
+        while (elapsedTime < totalTime)
+        {
+            if (isDead) yield break;
+            elapsedTime += Time.deltaTime;
+            float linearProgress = elapsedTime / totalTime;
+            linearProgress = Mathf.Clamp01(linearProgress);
+            Vector3 currentPos = Vector3.Lerp(startPos, targetPos, linearProgress);
+            float heightOffset = 4 * jumpHeight * linearProgress * (1f - linearProgress);
+            currentPos.y = Mathf.Lerp(startPos.y, targetPos.y, linearProgress) + heightOffset;
+            transform.position = currentPos;
+            yield return null;
+        }
+
+        transform.position = new Vector3(targetPos.x, targetPos.y, targetPos.z);
+        isJumping = false;
+
+        if (agent != null && !isDead)
+        {
+            agent.enabled = true;
+            agent.isStopped = false;
+        }
     }
 
     private void OnDrawGizmosSelected()

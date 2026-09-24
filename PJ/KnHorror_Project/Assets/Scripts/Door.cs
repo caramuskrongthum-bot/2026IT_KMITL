@@ -1,156 +1,165 @@
 ﻿using StarterAssets;
 using UnityEngine;
 using System.Collections;
+using UnityEngine.Events;
 
 public class Door : MonoBehaviour
 {
+    [Header("Door Settings")]
     public Animator Door_Animator;
+    public string Anim_Name = "PushDoor";
     public Transform Player_P_T;
+    public bool isLoadNextRoom = true;
 
+    [Header("Timing Settings")]
     public float moveDuration = 0.5f;
     public float waitTime = 1f;
 
-    private bool isLoading = false;
+    [Header("Audio Settings")]
     public AudioSource AS;
     public AudioClip AC;
 
-    public GameObject Ui_Interactable;
+    [Header("UI References")]
+    public GameObject Ui_Interactable; // ✨ ตอนนี้จะสลับการทำงานให้ปิดเมื่อเข้าเขต
+    public GameObject KeyDisplay;
+    public UnityEvent EventDone;
+
+    [Header("References")]
+    public GameObject G;
+
+    private bool isLoading = false;
 
     private void OnTriggerStay(Collider other)
     {
-        if (!other.CompareTag("Player"))
-            return;
+        if (!other.CompareTag("Player")) return;
 
-        Player_Basic_Controller playerController =
-            other.GetComponent<Player_Basic_Controller>();
-
-        if (playerController == null)
-            return;
+        Player_Basic_Controller playerController = other.GetComponent<Player_Basic_Controller>();
+        if (playerController == null) return;
 
         if (playerController.PressingFire1)
         {
             StartPushDoor();
         }
     }
+
     private void OnTriggerEnter(Collider other)
     {
         if (other.CompareTag("Player"))
         {
-            Ui_Manager Ui_Manager = GameObject.FindGameObjectWithTag("Ui_Manager").GetComponent<Ui_Manager>();
-            Ui_Manager.EnterCanInteract();
+            Ui_Manager uiManager = GameObject.FindGameObjectWithTag("Ui_Manager").GetComponent<Ui_Manager>();
+            if (uiManager != null)
+                uiManager.EnterCanInteract();
+
+            if (KeyDisplay != null)
+                KeyDisplay.SetActive(true);
+
+            // ✨ เมื่อผู้เล่นเข้าเขต ให้ปิด Ui_Interactable (Active = false)
+            if (Ui_Interactable != null)
+                Ui_Interactable.SetActive(false);
         }
     }
+
     private void OnTriggerExit(Collider other)
     {
         if (other.CompareTag("Player"))
         {
-            Ui_Manager Ui_Manager = GameObject.FindGameObjectWithTag("Ui_Manager").GetComponent<Ui_Manager>();
-            Ui_Manager.ExitCanInteract();
+            Ui_Manager uiManager = GameObject.FindGameObjectWithTag("Ui_Manager").GetComponent<Ui_Manager>();
+            if (uiManager != null)
+                uiManager.ExitCanInteract();
+
+            if (KeyDisplay != null)
+                KeyDisplay.SetActive(false);
+
+            // ✨ เมื่อผู้เล่นออกจากเขต ให้เปิด Ui_Interactable กลับมา (Active = true)
+            if (Ui_Interactable != null)
+                Ui_Interactable.SetActive(true);
         }
     }
+
     public void StartPushDoor()
     {
-        Ui_Manager Ui_Manager = GameObject.FindGameObjectWithTag("Ui_Manager").GetComponent<Ui_Manager>();
-        Ui_Manager.ExitCanInteract();
-        if (isLoading)
-            return;
+        EventDone.Invoke();
+        Ui_Manager uiManager = GameObject.FindGameObjectWithTag("Ui_Manager").GetComponent<Ui_Manager>();
+        if (uiManager != null)
+            uiManager.ExitCanInteract();
 
-        GameObject Player =
-            GameObject.FindGameObjectWithTag("Player");
+        if (KeyDisplay != null)
+            KeyDisplay.SetActive(false);
 
-        if (Player == null)
-            return;
+        if (isLoading) return;
 
+        GameObject player = GameObject.FindGameObjectWithTag("Player");
+        if (player == null) return;
         isLoading = true;
-        StartCoroutine(TeleportPlayer(Player));
+
+        StartCoroutine(TeleportPlayer(player));
     }
 
-    private IEnumerator TeleportPlayer(GameObject Player)
+    private IEnumerator TeleportPlayer(GameObject player)
     {
-        Ui_Interactable.SetActive(false);
+        if (G != null)
+            G.tag = "Untagged";
 
-        ThirdPersonController TPC =
-            Player.GetComponent<ThirdPersonController>();
+        if (Ui_Interactable != null)
+            Ui_Interactable.SetActive(false);
 
-        CharacterController C =
-            Player.GetComponent<CharacterController>();
+        ThirdPersonController tpc = player.GetComponent<ThirdPersonController>();
+        CharacterController cc = player.GetComponent<CharacterController>();
+        Animator animator = player.GetComponentInChildren<Animator>();
 
-        Animator A =
-            Player.GetComponentInChildren<Animator>();
+        if (isLoadNextRoom)
+        {
+            RoomManager roomManager = FindAnyObjectByType<RoomManager>();
+            if (roomManager != null)
+                roomManager.LoadNextRoom();
+        }
 
-        RoomManager roomManager =
-            FindAnyObjectByType<RoomManager>();
+        if (animator != null)
+            animator.Play(Anim_Name);
 
-        if (roomManager != null)
-            roomManager.LoadNextRoom();
+        if (tpc != null)
+            tpc.CanMove = false;
 
-        if (A != null)
-            A.Play("PushDoor");
+        if (cc != null)
+            cc.enabled = false;
 
-        if (TPC != null)
-            TPC.CanMove = false;
-
-        if (C != null)
-            C.enabled = false;
-
-        Vector3 startPosition =
-            Player.transform.position;
-
-        Vector3 targetPosition =
-            Player_P_T.position;
-
-        Quaternion startRotation =
-            Player.transform.rotation;
-
-        Quaternion targetRotation =
-            Player_P_T.rotation;
+        Vector3 startPosition = player.transform.position;
+        Vector3 targetPosition = Player_P_T.position;
+        Quaternion startRotation = player.transform.rotation;
+        Quaternion targetRotation = Player_P_T.rotation;
 
         float elapsed = 0f;
-        AS.PlayOneShot(AC);
+
+        if (AS != null && AC != null)
+            AS.PlayOneShot(AC);
+
         while (elapsed < moveDuration)
         {
             elapsed += Time.deltaTime;
-
-            float t =
-                Mathf.Clamp01(elapsed / moveDuration);
-
+            float t = Mathf.Clamp01(elapsed / moveDuration);
             t = Mathf.SmoothStep(0f, 1f, t);
 
-            Player.transform.position =
-                Vector3.Lerp(
-                    startPosition,
-                    targetPosition,
-                    t
-                );
-
-            Player.transform.rotation =
-                Quaternion.Slerp(
-                    startRotation,
-                    targetRotation,
-                    t
-                );
+            player.transform.position = Vector3.Lerp(startPosition, targetPosition, t);
+            player.transform.rotation = Quaternion.Slerp(startRotation, targetRotation, t);
 
             yield return null;
         }
 
-        Player.transform.SetPositionAndRotation(
-            targetPosition,
-            targetRotation
-        );
+        player.transform.SetPositionAndRotation(targetPosition, targetRotation);
 
-        if (C != null)
-            C.enabled = true;
+        if (cc != null)
+            cc.enabled = true;
 
-        if (TPC != null)
-            TPC.enabled = true;
+        if (tpc != null)
+            tpc.enabled = true;
 
         if (Door_Animator != null)
             Door_Animator.enabled = true;
 
         yield return new WaitForSeconds(waitTime);
 
-        if (TPC != null)
-            TPC.CanMove = true;
+        if (tpc != null)
+            tpc.CanMove = true;
 
         isLoading = false;
     }

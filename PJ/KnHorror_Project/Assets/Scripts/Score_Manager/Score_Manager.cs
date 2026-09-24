@@ -9,12 +9,19 @@ public class ScoreManager : MonoBehaviour
     public Transform playerTransform;
 
     [Header("UI Pop-up Settings")]
-    public GameObject popUpPrefab; // ลาก Prefab ที่มี TextMeshProUGUI มาใส่ตรงนี้
-    public Transform canvasTransform; // ลาก Canvas หรือ Panel ที่ต้องการให้ Spawn มาใส่ตรงนี้
+    public GameObject popUpPrefab; // Prefab ที่มี TextMeshProUGUI สำหรับทำ Pop-up เด้ง
+    public Transform canvasTransform; // Canvas ที่ให้ Pop-up ไปเกิด
+
+    [Header("UI Display Texts (ลาก TextMeshProUGUI มาใส่ตรงนี้แม่)")]
+    public TextMeshProUGUI roomText;          // แสดงจำนวนห้องที่ผ่านมา
+    public TextMeshProUGUI healText;          // แสดงจำนวนการฮีล
+    public TextMeshProUGUI resistText;        // แสดงจำนวนการขัดขืน
+    public TextMeshProUGUI monsterKillText;   // แสดงจำนวนมอนสเตอร์ที่กำจัด
+    public TextMeshProUGUI distanceText;      // แสดงระยะทางที่เดิน
 
     [Header("Score Data")]
-    public int passedRoomsCount = 0;       // จำนวนห้องที่ผ่านมาแล้ว
-    public int successfulHealsCount = 0;   // จำนวนการฮีลสำเร็จ
+    public int passedRoomsCount = 0;        // จำนวนห้องที่ผ่านมาแล้ว
+    public int successfulHealsCount = 0;    // จำนวนการฮีลสำเร็จ
     public int successfulResistsCount = 0; // จำนวนสำเร็จการขัดขืน
     public int monsterKillsCount = 0;      // จำนวนที่สามารถทำให้มอนสเตอร์ตายได้
     public float totalDistanceWalked = 0f; // ระยะทางที่เดินได้ (เมตร)
@@ -39,11 +46,13 @@ public class ScoreManager : MonoBehaviour
     private void Start()
     {
         InitPlayerTracking();
+        UpdateAllUI(); // อัปเดตหน้าจอตั้งแต่เริ่มเกม
     }
 
     private void Update()
     {
         TrackPlayerMovement();
+        UpdateDistanceUI(); // อัปเดตระยะทางแบบเรียลไทม์
     }
 
     private void InitPlayerTracking()
@@ -83,17 +92,36 @@ public class ScoreManager : MonoBehaviour
     }
 
     // ----------------------------------------------------
+    // 🖥️ UI UPDATE HELPER METHODS
+    // ----------------------------------------------------
+    private void UpdateAllUI()
+    {
+        if (roomText != null) roomText.text = $"Rooms: {passedRoomsCount}";
+        if (healText != null) healText.text = $"Heals: {successfulHealsCount}";
+        if (resistText != null) resistText.text = $"Resists: {successfulResistsCount}";
+        if (monsterKillText != null) monsterKillText.text = $"Monsters: {monsterKillsCount}";
+        if (distanceText != null) distanceText.text = $"Distance: {GetWalkedDistanceInMetersRounded()} m";
+    }
+
+    private void UpdateDistanceUI()
+    {
+        if (distanceText != null)
+        {
+            distanceText.text = $"Distance: {GetWalkedDistanceInMetersRounded()} m";
+        }
+    }
+
+    // ----------------------------------------------------
     // 🔤 HELPER METHOD: SPAWN POP-UP UI
     // ----------------------------------------------------
     private void ShowPopUp(string message)
     {
         if (popUpPrefab == null)
         {
-            Debug.LogWarning("ScoreManager: ยังไม่ได้ใส่ popUpPrefab ใน Inspector จ้า!");
+            Debug.LogWarning("ScoreManager: ยังไม่ได้ใส่ popUpPrefab ใน Inspector จ้าแม่!");
             return;
         }
 
-        // ถ้าไม่ได้ตั้ง canvasTransform ไว้ ให้ลองหาจาก Tag "Ui_Manager" หรือ Find Canvas ในฉากอัตโนมัติ[cite: 1, 7]
         if (canvasTransform == null)
         {
             Canvas canvas = FindFirstObjectByType<Canvas>();
@@ -107,7 +135,6 @@ public class ScoreManager : MonoBehaviour
         {
             GameObject popUpObj = Instantiate(popUpPrefab, canvasTransform, false);
 
-            // ดึง TextMeshProUGUI จากตัว Prefab หรือ Child ตัวแรก
             TextMeshProUGUI textComp = popUpObj.GetComponent<TextMeshProUGUI>();
             if (textComp == null)
             {
@@ -122,38 +149,37 @@ public class ScoreManager : MonoBehaviour
     }
 
     // ----------------------------------------------------
-    // 🔔 PUBLIC METHODS (บวกคะแนน + เด้ง Pop-up UI)
+    // 🔔 PUBLIC METHODS (บวกคะแนน + อัปเดต UI + เด้ง Pop-up)
     // ----------------------------------------------------
 
-    // เรียกตอนผ่านห้องสำเร็จ
     public void AddPassedRoom(int amount = 1)
     {
         passedRoomsCount += amount;
+        if (roomText != null) roomText.text = $"Rooms: {passedRoomsCount}";
         ShowPopUp($"Room Cleared! +{amount}");
     }
 
-    // เรียกตอนฮีลสำเร็จ
     public void AddSuccessfulHeal(int amount = 1)
     {
         successfulHealsCount += amount;
+        if (healText != null) healText.text = $"Heals: {successfulHealsCount}";
         ShowPopUp($"Heal successful! +{amount}");
     }
 
-    // เรียกตอนขัดขืนสำเร็จ
     public void AddSuccessfulResist(int amount = 1)
     {
         successfulResistsCount += amount;
+        if (resistText != null) resistText.text = $"Resists: {successfulResistsCount}";
         ShowPopUp($"Resist successful! +{amount}");
     }
 
-    // เรียกตอนมอนสเตอร์ตาย
     public void AddMonsterKill(int amount = 1)
     {
         monsterKillsCount += amount;
+        if (monsterKillText != null) monsterKillText.text = $"Monsters: {monsterKillsCount}";
         ShowPopUp($"Monster Defeated! +{amount}");
     }
 
-    // Reset สถิติทั้งหมด
     public void ResetScore()
     {
         passedRoomsCount = 0;
@@ -166,6 +192,8 @@ public class ScoreManager : MonoBehaviour
         {
             lastPlayerPosition = playerTransform.position;
         }
+
+        UpdateAllUI(); // รีเซ็ตหน้าจอ UI ทั้งหมดด้วย
     }
 
     // ----------------------------------------------------

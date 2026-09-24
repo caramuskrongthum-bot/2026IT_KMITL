@@ -5,8 +5,14 @@
         _BaseMap ("Texture", 2D) = "white" {}
         _BaseColor ("Color", Color) = (1,1,1,1)
 
-        _FadeStart ("Fade Start Distance", Float) = 15
-        _FadeEnd ("Fade End Distance", Float) = 25
+        _NearDistance ("Near Hide Distance", Float) = 3
+        _MiddleDistance ("Middle Visible Distance", Float) = 5
+
+        _FadeStart ("Far Fade Start", Float) = 15
+        _FadeEnd ("Far Fade End", Float) = 25
+
+        [Toggle] _EnableSpin ("Enable 360 Spin", Float) = 0
+        _SpinSpeed ("Spin Speed", Float) = 100
     }
 
     SubShader
@@ -23,6 +29,7 @@
         ZTest Always
         ZWrite Off
         Cull Off
+
         Blend SrcAlpha OneMinusSrcAlpha
 
         Pass
@@ -49,7 +56,8 @@
                 float2 uv : TEXCOORD0;
                 float4 color : COLOR;
 
-                float3 worldPos : TEXCOORD1;
+                // Fade ของ Object นั้นๆ
+                float fade : TEXCOORD1;
             };
 
             TEXTURE2D(_BaseMap);
@@ -60,8 +68,14 @@
                 float4 _BaseMap_ST;
                 float4 _BaseColor;
 
+                float _NearDistance;
+                float _MiddleDistance;
+
                 float _FadeStart;
                 float _FadeEnd;
+
+                float _EnableSpin;
+                float _SpinSpeed;
 
             CBUFFER_END
 
@@ -70,43 +84,155 @@
             {
                 Varyings output;
 
-                float3 pivotWS = TransformObjectToWorld(float3(0, 0, 0));
+                // =========================================
+                // Object Pivot
+                // =========================================
+
+                float3 pivotWS =
+                    TransformObjectToWorld(float3(0, 0, 0));
+
+                float3 cameraPos =
+                    GetCameraPositionWS();
+
+
+                // =========================================
+                // ระยะจาก Pivot -> Camera
+                // =========================================
+
+                float distanceToCamera =
+                    distance(pivotWS, cameraPos);
+
+
+                // =========================================
+                // NEAR FADE
+                //
+                // ใกล้เกินไป = หาย
+                // =========================================
+
+                float nearFade =
+                    smoothstep(
+                        _NearDistance,
+                        _MiddleDistance,
+                        distanceToCamera
+                    );
+
+
+                // =========================================
+                // FAR FADE
+                //
+                // ไกลเกินไป = จาง
+                // =========================================
+
+                float farFade =
+                    1.0 -
+                    smoothstep(
+                        _FadeStart,
+                        _FadeEnd,
+                        distanceToCamera
+                    );
+
+
+                output.fade =
+                    nearFade * farFade;
+
+
+                // =========================================
+                // FULL 3D BILLBOARD
+                // =========================================
 
                 float3 toCamera =
-                    normalize(GetCameraPositionWS() - pivotWS);
+                    normalize(cameraPos - pivotWS);
 
-                // Billboard
-                float3 forward =
-                    normalize(float3(toCamera.x, 0, toCamera.z));
+                float3 worldUp =
+                    float3(0, 1, 0);
 
                 float3 right =
-                    normalize(cross(float3(0, 1, 0), forward));
+                    normalize(
+                        cross(worldUp, toCamera)
+                    );
 
-                float3 up = float3(0, 1, 0);
 
+                // ป้องกันกล้องมองตรงขึ้น/ลง
+                if (length(right) < 0.001)
+                {
+                    right = float3(1, 0, 0);
+                }
+
+                float3 up =
+                    normalize(
+                        cross(toCamera, right)
+                    );
+
+
+                // =========================================
+                // SPIN
+                // =========================================
+
+                if (_EnableSpin > 0.5)
+                {
+                    float angle =
+                        _Time.y *
+                        _SpinSpeed *
+                        (PI / 180.0);
+
+                    float cosA = cos(angle);
+                    float sinA = sin(angle);
+
+                    float3 rotatedRight =
+                        right * cosA -
+                        up * sinA;
+
+                    float3 rotatedUp =
+                        right * sinA +
+                        up * cosA;
+
+                    right = rotatedRight;
+                    up = rotatedUp;
+                }
+
+
+                // =========================================
                 // World Scale
+                // =========================================
+
                 float3 scaleWS = float3(
                     length(UNITY_MATRIX_M._m00_m10_m20),
                     length(UNITY_MATRIX_M._m01_m11_m21),
                     length(UNITY_MATRIX_M._m02_m12_m22)
                 );
 
+
+                // =========================================
+                // Billboard Position
+                // =========================================
+
                 float3 finalWorldPos =
                     pivotWS
-                    + right * input.positionOS.x * scaleWS.x
-                    + up * input.positionOS.y * scaleWS.y;
+                    + right *
+                      input.positionOS.x *
+                      scaleWS.x
+                    + up *
+                      input.positionOS.y *
+                      scaleWS.y;
+
 
                 output.positionCS =
-                    TransformWorldToHClip(finalWorldPos);
+                    TransformWorldToHClip(
+                        finalWorldPos
+                    );
+
 
                 output.uv =
-                    TRANSFORM_TEX(input.uv, _BaseMap);
+                    TRANSFORM_TEX(
+                        input.uv,
+                        _BaseMap
+                    );
+
 
                 output.color =
-                    input.color * _BaseColor;
+                    input.color *
+                    _BaseColor;
 
-                // เก็บตำแหน่ง World Space
-                output.worldPos = finalWorldPos;
 
                 return output;
             }
@@ -121,30 +247,14 @@
                         input.uv
                     );
 
-                float3 cameraPos =
-                    GetCameraPositionWS();
-
-                // ระยะจากกล้อง
-                float distanceToCamera =
-                    distance(input.worldPos, cameraPos);
-
-                // 0 = เห็นเต็ม
-                // 1 = หายไป
-                float fade =
-                    smoothstep(
-                        _FadeStart,
-                        _FadeEnd,
-                        distanceToCamera
-                    );
-
-                // กลับค่า
-                float alpha =
-                    1.0 - fade;
 
                 float4 finalColor =
-                    texColor * input.color;
+                    texColor *
+                    input.color;
 
-                finalColor.a *= alpha;
+
+                finalColor.a *= input.fade;
+
 
                 return finalColor;
             }

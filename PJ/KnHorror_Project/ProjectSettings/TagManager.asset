@@ -10,6 +10,7 @@ TagManager:
   - HitBoxForMonster
   - Ui_Manager
   - BlackHood
+  - medicine
   layers:
   - Default
   - TransparentFX

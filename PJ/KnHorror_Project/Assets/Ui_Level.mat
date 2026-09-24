@@ -150,7 +150,7 @@ Material:
     - _QueueOffset: 0
     - _ReceiveShadows: 1
     - _ReflectionStrength: 0.5
-    - _RotationJitter: 1.5
+    - _RotationJitter: 0.87
     - _RotationSpeed: 0.8
     - _ScaleJitter: 0.015
     - _Smoothness: 0.5
