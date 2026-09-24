@@ -22421,6 +22421,10 @@ PrefabInstance:
       propertyPath: m_Name
       value: ---Player---
       objectReference: {fileID: 0}
+    - target: {fileID: 3468077538244556739, guid: a57ab489de7ee304cb6e89386fd2c91a, type: 3}
+      propertyPath: OutputAudioMixerGroup
+      value: 
+      objectReference: {fileID: -2620293995988300063, guid: 0ba1898afcba99d4e8be7b19bee167bb, type: 2}
     - target: {fileID: 3844744488119383809, guid: a57ab489de7ee304cb6e89386fd2c91a, type: 3}
       propertyPath: Event_05.m_PersistentCalls.m_Calls.Array.size
       value: 2
