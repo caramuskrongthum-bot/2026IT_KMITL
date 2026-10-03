@@ -15,4 +15,4 @@ MonoBehaviour:
   ITEM_NAME: 111
   ITEM_VALUE: 15
   itemPrefab: {fileID: 5245914690577604529, guid: 461952baf5cc9784ca11ad659b034e6b, type: 3}
-  icon: {fileID: 21300000, guid: ad3672cbd5198ab488e1802d8a21eb13, type: 3}
+  icon: {fileID: 1662459463, guid: a7cff0152d20a384f87b5b47ea5ef6ea, type: 3}

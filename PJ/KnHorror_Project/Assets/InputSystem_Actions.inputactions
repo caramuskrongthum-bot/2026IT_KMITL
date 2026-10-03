@@ -158,6 +158,15 @@
                     "processors": "",
                     "interactions": "",
                     "initialStateCheck": false
+                },
+                {
+                    "name": "Skill_Perk",
+                    "type": "Button",
+                    "id": "6a072cae-40a1-4c9b-b71b-205004cd96b5",
+                    "expectedControlType": "",
+                    "processors": "",
+                    "interactions": "",
+                    "initialStateCheck": false
                 }
             ],
             "bindings": [
@@ -340,7 +349,7 @@
                 {
                     "name": "",
                     "id": "110985aa-8440-4948-9df5-05000297d7aa",
-                    "path": "<Gamepad>/rightShoulder",
+                    "path": "<Gamepad>/rightTrigger",
                     "interactions": "",
                     "processors": "",
                     "groups": "",
@@ -549,7 +558,7 @@
                 {
                     "name": "",
                     "id": "bc5bb4e9-206e-4ae5-9c85-26f0d062d069",
-                    "path": "<Keyboard>/3",
+                    "path": "<Keyboard>/f",
                     "interactions": "",
                     "processors": "",
                     "groups": "",
@@ -571,7 +580,7 @@
                 {
                     "name": "",
                     "id": "956e76ec-448b-4021-8090-b0e33c521d60",
-                    "path": "<Gamepad>/leftTrigger",
+                    "path": "<Gamepad>/leftShoulder",
                     "interactions": "",
                     "processors": "",
                     "groups": "",
@@ -582,7 +591,7 @@
                 {
                     "name": "",
                     "id": "92c3d82e-44a8-42df-ba7b-41a964a3e8d6",
-                    "path": "<Gamepad>/rightTrigger",
+                    "path": "<Gamepad>/rightShoulder",
                     "interactions": "",
                     "processors": "",
                     "groups": "",
@@ -664,6 +673,28 @@
                     "processors": "",
                     "groups": "",
                     "action": "EndGame",
+                    "isComposite": false,
+                    "isPartOfComposite": false
+                },
+                {
+                    "name": "",
+                    "id": "a0b5f87e-2f1f-485c-b252-df88e7a3458e",
+                    "path": "<Keyboard>/capsLock",
+                    "interactions": "",
+                    "processors": "",
+                    "groups": "",
+                    "action": "Skill_Perk",
+                    "isComposite": false,
+                    "isPartOfComposite": false
+                },
+                {
+                    "name": "",
+                    "id": "50a43453-f0da-477b-b60d-9e2bbf608211",
+                    "path": "<Gamepad>/leftTrigger",
+                    "interactions": "",
+                    "processors": "",
+                    "groups": "",
+                    "action": "Skill_Perk",
                     "isComposite": false,
                     "isPartOfComposite": false
                 }

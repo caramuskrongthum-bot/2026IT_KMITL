@@ -1,0 +1,25 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: e72ac1c3b2f5b844da719db359a9f74f, type: 3}
+  m_Name: Quest 1
+  m_EditorClassIdentifier: Assembly-CSharp::Quest
+  questId: 1
+  questTitle: Who defines it?
+  description: Defeat 35 monsters.
+  questType: 0
+  targetMonsterKills: 35
+  targetRoomsToOpen: 0
+  targetWalkDistance: 0
+  targetHeals: 0
+  targetResists: 0
+  coinReward: 150
+  QuestIcon: {fileID: 475917429, guid: 646975472ea2e9444adc931612022b36, type: 3}

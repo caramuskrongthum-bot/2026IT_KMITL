@@ -115,6 +115,15 @@ MonoBehaviour:
   Event_02:
     m_PersistentCalls:
       m_Calls: []
+  Event_03:
+    m_PersistentCalls:
+      m_Calls: []
+  Event_04:
+    m_PersistentCalls:
+      m_Calls: []
+  Event_05:
+    m_PersistentCalls:
+      m_Calls: []
 --- !u!1 &4416396794141385073
 GameObject:
   m_ObjectHideFlags: 0

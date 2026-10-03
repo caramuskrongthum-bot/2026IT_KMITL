@@ -68,8 +68,8 @@ MonoBehaviour:
   m_EditorClassIdentifier: '::'
   isOneTimeUse: 1
   interactionCooldown: 1
-  uiInteractable: {fileID: 0}
-  KeyDisplay: {fileID: 0}
+  uiInteractable: {fileID: 2232269410867926780}
+  KeyDisplay: {fileID: 7287666921885299668}
   onPlayerInteracted:
     m_PersistentCalls:
       m_Calls:

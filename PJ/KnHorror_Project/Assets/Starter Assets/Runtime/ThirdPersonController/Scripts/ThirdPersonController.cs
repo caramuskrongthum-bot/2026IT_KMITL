@@ -1,7 +1,10 @@
 ﻿using UnityEngine;
 using UnityEngine.InputSystem;
 using System.Collections.Generic;
+using System.Collections; // เพิ่มเข้ามาสำหรับใช้ Coroutine
+using UnityEngine.UI; // 📌 เพิ่มเข้ามาสำหรับจัดการ Slider
 using StarterAssets;
+
 namespace StarterAssets
 {
     [RequireComponent(typeof(CharacterController))]
@@ -105,6 +108,13 @@ namespace StarterAssets
         [Tooltip("หากเป็น true จะหยุดการเคลื่อนไหวและการควบคุมทั้งหมด เพื่อเตรียมรับการ Teleport")]
         public bool IsCatching = false;
 
+        [Header("💫 DIZZY & STUN SETTINGS (ตัวแม่มึนงง)")]
+        [Tooltip("GameObject ดาวหมุนบนหัวเวลามึนสตั๊น")]
+        public GameObject Spining_Star_OnHead;
+        [Tooltip("ระยะเวลาที่มึนงง (วินาที)")]
+        public float DizzyDuration = 3.0f;
+        private bool isDizzyState = false;
+
         // Cinemachine internal
         private float _cinemachineTargetYaw;
         private float _cinemachineTargetPitch;
@@ -131,6 +141,7 @@ namespace StarterAssets
         private int _animIDJump;
         private int _animIDFreeFall;
         private int _animIDMotionSpeed;
+        private int _animIDDizzy; // 💫 ID สำหรับอนิเมชั่น Dizzy
 
 #if ENABLE_INPUT_SYSTEM
         private PlayerInput _playerInput;
@@ -149,6 +160,23 @@ namespace StarterAssets
         private Quaternion _leftFootIKRot, _rightFootIKRot;
         private float _currentLeftWeight, _currentRightWeight;
         public bool CanMove = true;
+
+        [Tooltip("ระยะเวลาในการพุ่ง Dash (วินาที)")]
+        public float DashDuration = 0.2f;
+        [Tooltip("ความเร็วในการพุ่ง Dash")]
+        public float DashSpeed = 15.0f;
+        [Tooltip("Cooldown ป้องกันการกด Dash รัวๆ")]
+        public float DashCooldown = 1.0f;
+        private bool isDashing = false;
+        private float dashCooldownTimer = 0f;
+        private int _animIDDash; // ID สำหรับอนิเมชั่น Dash
+
+        [Header("🔪✨ KILLER MODE SETTINGS")]
+        public bool AttackerMode = false;
+        [Tooltip("ลาก Slider UI สำหรับบอกเวลาที่เหลือของ Killer Mode มาใส่ตรงนี้")]
+        public Slider KillerTimerSlider;
+        private Coroutine killerModeCoroutine;
+
         private bool IsCurrentDeviceMouse
         {
             get
@@ -186,13 +214,28 @@ namespace StarterAssets
 
             _jumpTimeoutDelta = JumpTimeout;
             _fallTimeoutDelta = FallTimeout;
+
+            // ปิดดาวบนหัวไว้ก่อนเริ่มเกม
+            if (Spining_Star_OnHead != null)
+            {
+                Spining_Star_OnHead.SetActive(false);
+            }
+
+            // ซ่อน Slider ของ Killer Mode ไว้ก่อนตอนเริ่มเกม
+            if (KillerTimerSlider != null)
+            {
+                KillerTimerSlider.gameObject.SetActive(false);
+            }
         }
 
         private void Update()
         {
             _hasAnimator = TryGetComponent(out _animator);
 
-            // ถ้าโดนจับอยู่ (IsCatching = true) ให้ตัดการทำงานฟังก์ชันเคลื่อนไหวและแรงโน้มถ่วงทิ้งไปเลยแม่
+            if (dashCooldownTimer > 0f)
+            {
+                dashCooldownTimer -= Time.deltaTime;
+            }
             if (IsCatching)
             {
                 if (_controller.enabled) _controller.enabled = false;
@@ -205,7 +248,7 @@ namespace StarterAssets
 
             JumpAndGravity();
             GroundedCheck();
-            if (CanMove)
+            if (CanMove && !isDizzyState)
             {
                 Move();
             }
@@ -234,6 +277,92 @@ namespace StarterAssets
         }
 
         // ==========================================
+        // 🚪✨ TELEPORT METHOD (พาน้องวาร์ปไปจุดหมาย)
+        // ==========================================
+        public void Teleport(Transform Point_Tele)
+        {
+            if (Point_Tele == null)
+            {
+                Debug.LogWarning("⚠️ Point_Tele เป็นค่า Null ไม่สามารถเทเลพอร์ตได้จ่ะแม่!");
+                return;
+            }
+
+            // ปิด CharacterController ชั่วคราวเพื่อให้ย้ายตำแหน่งได้แบบไม่มีสะดุด
+            if (_controller != null)
+            {
+                _controller.enabled = false;
+            }
+
+            // ย้ายตำแหน่งและองศาการหันไปตามจุดที่กำหนด
+            transform.position = Point_Tele.position;
+            transform.rotation = Point_Tele.rotation;
+
+            // ซิงค์มุมกล้อง Cinemachine ให้หันตามทิศทางใหม่ด้วย (ถ้ามีเป้าหมาย)
+            if (CinemachineCameraTarget != null)
+            {
+                _cinemachineTargetYaw = Point_Tele.eulerAngles.y;
+            }
+
+            // รีเซ็ตแรงโน้มถ่วงและความเร็วตก
+            _verticalVelocity = -2f;
+            _speed = 0f;
+            _animationBlend = 0f;
+
+            // เปิด CharacterController กลับมาทำงานปกติ
+            if (_controller != null)
+            {
+                _controller.enabled = true;
+            }
+
+            Debug.Log($"✨ Teleport สำเร็จ! วาร์ปมาที่ห้องพิกัด: {Point_Tele.name} เรียบร้อยจ่ะแม่");
+        }
+
+        // ==========================================
+        // 💫✨ PUBLIC METHOD: PLAYER DIZZY (มึนสตั๊น 3 วิ)
+        // ==========================================
+        public void PlayerDizzy()
+        {
+            if (isDizzyState) return; // ถ้ามึนอยู่แล้วไม่ต้องเรียกซ้ำ
+            StartCoroutine(DizzyRoutine());
+        }
+
+        private IEnumerator DizzyRoutine()
+        {
+            isDizzyState = true;
+            CanMove = false; // หยุดเดิน
+
+            // เปิดใช้งานดาวหมุนบนหัว
+            if (Spining_Star_OnHead != null)
+            {
+                Spining_Star_OnHead.SetActive(true);
+            }
+
+            // เล่นอนิเมชั่น Dizzy
+            if (_hasAnimator)
+            {
+                _animator.SetBool(_animIDDizzy, true);
+            }
+
+            // รอ 3 วินาที (ตามที่ตั้งค่าไว้ใน DizzyDuration)
+            yield return new WaitForSeconds(DizzyDuration);
+
+            // ปิดอนิเมชั่น Dizzy
+            if (_hasAnimator)
+            {
+                _animator.SetBool(_animIDDizzy, false);
+            }
+
+            // ปิดดาวหมุนบนหัว
+            if (Spining_Star_OnHead != null)
+            {
+                Spining_Star_OnHead.SetActive(false);
+            }
+
+            CanMove = true; // กลับมาเดินได้ปกติ
+            isDizzyState = false;
+        }
+
+        // ==========================================
         // 💅✨ PUBLIC METHODS FOR CATCHING STATE
         // ==========================================
         public void SetIsCatching(bool catching)
@@ -258,6 +387,7 @@ namespace StarterAssets
             _animIDJump = Animator.StringToHash("Jump");
             _animIDFreeFall = Animator.StringToHash("FreeFall");
             _animIDMotionSpeed = Animator.StringToHash("MotionSpeed");
+            _animIDDizzy = Animator.StringToHash("Dizzy"); // 💫 ผูก Hash ของ Dizzy
         }
 
         private void GroundedCheck()
@@ -298,7 +428,13 @@ namespace StarterAssets
 
         private void Move()
         {
-            float targetSpeed = _input.sprint ? SprintSpeed : MoveSpeed;
+            // 🚀 เช็ค Perk จาก PlayerPrefs (ถ้า PERK_02 มีค่าเท่ากับ 1 ให้บวกความเร็วเพิ่ม 0.75)
+            float perkBonus = (PlayerPrefs.GetInt("PERK_02", 0) == 1) ? 0.75f : 0.0f;
+
+            float currentMoveSpeed = MoveSpeed + perkBonus;
+            float currentSprintSpeed = SprintSpeed + perkBonus;
+
+            float targetSpeed = _input.sprint ? currentSprintSpeed : currentMoveSpeed;
             if (_input.move == Vector2.zero) targetSpeed = 0.0f;
 
             float currentHorizontalSpeed = new Vector3(_controller.velocity.x, 0.0f, _controller.velocity.z).magnitude;
@@ -325,7 +461,7 @@ namespace StarterAssets
                 _targetRotation = Mathf.Atan2(inputDirection.x, inputDirection.z) * Mathf.Rad2Deg + _mainCamera.transform.eulerAngles.y;
                 float rotation = Mathf.SmoothDampAngle(transform.eulerAngles.y, _targetRotation, ref _rotationVelocity, RotationSmoothTime);
 
-                float targetLean = -_input.move.x * MaxLeanAngle * (_speed / SprintSpeed);
+                float targetLean = -_input.move.x * MaxLeanAngle * (_speed / currentSprintSpeed);
                 _currentLeanAngle = Mathf.Lerp(_currentLeanAngle, targetLean, Time.deltaTime * LeanSpeed);
 
                 Quaternion targetRotation = Quaternion.Euler(0.0f, rotation, 0.0f);
@@ -411,7 +547,7 @@ namespace StarterAssets
 
         private void OnAnimatorIK(int layerIndex)
         {
-            if (!_hasAnimator || IsCatching) return; // ปิด IK ชั่วคราวตอนโดนจับด้วยเพื่อความปลอดภัย
+            if (!_hasAnimator || IsCatching || isDizzyState) return; // ปิด IK ชั่วคราวตอนมึนด้วยเพื่อความปลอดภัย
 
             if (EnableLookAt && _mainCamera != null)
             {
@@ -479,7 +615,7 @@ namespace StarterAssets
             Color transparentGreen = new Color(0.0f, 1.0f, 0.0f, 0.35f);
             Color transparentRed = new Color(1.0f, 0.0f, 0.0f, 0.35f);
 
-            Gizmos.color = Grounded ? transparentGreen : transparentRed;
+            _ = Grounded ? transparentGreen : transparentRed;
             Gizmos.DrawSphere(new Vector3(transform.position.x, transform.position.y - GroundedOffset, transform.position.z), GroundedRadius);
         }
 
@@ -499,5 +635,105 @@ namespace StarterAssets
                 AudioSource.PlayClipAtPoint(LandingAudioClip, transform.TransformPoint(_controller.center), FootstepAudioVolume);
             }
         }
+
+        // ==========================================
+        // 💨✨ PUBLIC METHOD: DASH (พุ่งตัวตามทิศทางกล้อง)
+        // ==========================================
+        public void Dash()
+        {
+            if (isDashing || dashCooldownTimer > 0f || IsCatching || isDizzyState) return;
+
+            StartCoroutine(DashRoutine());
+        }
+
+        private IEnumerator DashRoutine()
+        {
+            isDashing = true;
+            CanMove = false;
+            if (_hasAnimator)
+            {
+                _animator.Play("Dash");
+            }
+            Vector3 dashDirection = _mainCamera.transform.forward;
+            dashDirection.y = 0f;
+            dashDirection.Normalize();
+            if (dashDirection == Vector3.zero)
+            {
+                dashDirection = transform.forward;
+            }
+            transform.rotation = Quaternion.LookRotation(dashDirection);
+
+            float elapsedTime = 0f;
+
+            while (elapsedTime < DashDuration)
+            {
+                if (_controller != null && _controller.enabled)
+                {
+                    _controller.Move(dashDirection * DashSpeed * Time.deltaTime + new Vector3(0.0f, _verticalVelocity, 0.0f) * Time.deltaTime);
+                }
+
+                elapsedTime += Time.deltaTime;
+                yield return null;
+            }
+
+            CanMove = true;
+            isDashing = false;
+            dashCooldownTimer = DashCooldown;
+        }
+
+        // ==========================================
+        // 🔪✨ PUBLIC METHOD: START KILLER MODE (โหมดฆ่า 10 วินาที)
+        // ==========================================
+        public void StartKillerMode()
+        {
+            // ถ้ารันรูทีนอยู่แล้ว ให้หยุดอันเดิมก่อนเพื่อป้องกันเวลาตีกัน
+            if (killerModeCoroutine != null)
+            {
+                StopCoroutine(killerModeCoroutine);
+            }
+
+            killerModeCoroutine = StartCoroutine(KillerModeRoutine());
+        }
+
+        private IEnumerator KillerModeRoutine()
+        {
+            AttackerMode = true;
+
+            float remainingTime = 10.0f;
+
+            // ตั้งค่าและเปิดแสดงผล Slider
+            if (KillerTimerSlider != null)
+            {
+                KillerTimerSlider.maxValue = 10f;
+                KillerTimerSlider.wholeNumbers = true; // ตั้งค่าให้ value เป็น int (จำนวนเต็ม)
+                KillerTimerSlider.value = Mathf.RoundToInt(remainingTime);
+                KillerTimerSlider.gameObject.SetActive(true);
+            }
+
+            while (remainingTime > 0f)
+            {
+                remainingTime -= Time.deltaTime;
+
+                if (KillerTimerSlider != null)
+                {
+                    KillerTimerSlider.value = Mathf.RoundToInt(remainingTime);
+                }
+
+                yield return null;
+            }
+
+            // พอครบ 10 วินาที ปิด KillerMode ทันที
+            AttackerMode = false;
+
+            // ซ่อน Slider เมื่อหมดเวลา
+            if (KillerTimerSlider != null)
+            {
+                KillerTimerSlider.value = 0f;
+                KillerTimerSlider.gameObject.SetActive(false);
+            }
+
+            killerModeCoroutine = null;
+        }
+
     }
 }

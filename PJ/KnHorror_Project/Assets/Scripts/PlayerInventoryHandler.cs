@@ -1,4 +1,5 @@
 ﻿using UnityEngine;
+using UnityEngine.UI;
 using System.Collections.Generic;
 using Tiny;
 using StarterAssets;
@@ -36,6 +37,14 @@ public class PlayerInventoryHandler : MonoBehaviour
     private ThirdPersonController thirdPersonController;
     private bool lastCatchingState = false;
 
+    [Header("👻 Scare Bar & Monster Spawn Settings")]
+    public Slider Scare_Bar;                     // 📊 หลอดความกลัว (Max แนะนำให้เซ็ตเป็น 100)
+    public float scareIncreaseRate = 15f;        // ความเร็วที่หลอดเพิ่มขึ้นตอนไม่ถือไอเทม 2
+    public float scareDecreaseRate = 20f;        // ความเร็วที่หลอดลดลงตอนถือไอเทม 2
+    public GameObject monsterPrefabToSpawn;      // 🧟‍♂️ Prefab มอนสเตอร์ที่จะสปอน
+    public float spawnInterval = 9.0f;           // ⏱️ ระยะเวลาสปอนทุกๆ 9 วินาที
+    private float spawnTimer = 0f;
+
     void Start()
     {
         animator = GetComponent<Animator>();
@@ -62,6 +71,13 @@ public class PlayerInventoryHandler : MonoBehaviour
                 HideItemHand();
             else
                 ShowItemHand();
+        }
+
+        // ตั้งค่าเริ่มต้น Scare_Bar
+        if (Scare_Bar != null)
+        {
+            Scare_Bar.maxValue = 100f;
+            Scare_Bar.value = 0f;
         }
     }
 
@@ -105,10 +121,15 @@ public class PlayerInventoryHandler : MonoBehaviour
                 transform.rotation = Quaternion.Slerp(
                     transform.rotation,
                     targetRotation,
-                    Time.deltaTime * 15f
+                    Time.deltaTime * 55f
                 );
             }
         }
+
+        // ==========================================
+        // SCARE BAR & MONSTER SPAWN LOGIC (👻✨)
+        // ==========================================
+        HandleScareBarAndSpawn();
 
         // ==========================================
         // UI
@@ -153,6 +174,57 @@ public class PlayerInventoryHandler : MonoBehaviour
                 Time.deltaTime * fogTransitionSpeed
             );
         }
+    }
+
+    // ฟังก์ชันจัดการหลอดความกลัวและเงื่อนไขการสปอนมอนสเตอร์
+    private void HandleScareBarAndSpawn()
+    {
+        if (Scare_Bar == null) return;
+
+        // ถ้าถือไอเทมชิ้นที่ 2 (index == 1) หลอดจะลดลงเรื่อยๆ
+        if (currentEquippedIndex == 1)
+        {
+            Scare_Bar.value = Mathf.MoveTowards(Scare_Bar.value, 0f, scareDecreaseRate * Time.deltaTime);
+            spawnTimer = 0f; // รีเซิตเวลาสปอนเมื่อถือไอเทม 2
+        }
+        else
+        {
+            // ถ้าไม่ถือไอเทมชิ้นที่ 2 หลอดจะเพิ่มขึ้นเรื่อยๆ จนตันที่ 100
+            Scare_Bar.value = Mathf.MoveTowards(Scare_Bar.value, 100f, scareIncreaseRate * Time.deltaTime);
+        }
+
+        // หากค่าหลอดความกลัวมากกว่า 50
+        if (Scare_Bar.value > 50f)
+        {
+            spawnTimer += Time.deltaTime;
+
+            // ทุกๆ 9 วินาที จะสปอนมอนสเตอร์มาข้างหลัง
+            if (spawnTimer >= spawnInterval)
+            {
+                spawnTimer = 0f;
+                SpawnMonsterBehindPlayer();
+            }
+        }
+        else
+        {
+            spawnTimer = 0f;
+        }
+    }
+
+    // ฟังก์ชันคำนวณตำแหน่งสปอนด้านหลัง Player
+    private void SpawnMonsterBehindPlayer()
+    {
+        if (monsterPrefabToSpawn == null)
+        {
+            Debug.LogWarning("PlayerInventoryHandler: ยังไม่ได้ใส่ Prefab Monster ในช่อง monsterPrefabToSpawn เลยค่ะคุณน้า!");
+            return;
+        }
+
+        // คำนวณตำแหน่งด้านหลัง Player (ถอยหลังไป 2.5 เมตร)
+        Vector3 spawnPosition = transform.position - (transform.forward * 2.5f);
+        spawnPosition.y = transform.position.y; // ให้ระดับความสูงเท่ากับผู้เล่น
+
+        Instantiate(monsterPrefabToSpawn, spawnPosition, transform.rotation);
     }
 
     public void EquipSlot(int slotIndex)

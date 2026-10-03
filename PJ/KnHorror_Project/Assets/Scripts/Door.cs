@@ -8,6 +8,8 @@ public class Door : MonoBehaviour
     [Header("Door Settings")]
     public Animator Door_Animator;
     public string Anim_Name = "PushDoor";
+    public string Fast_Anim_Name = "PushDoor_Faster"; // ⚡ ชื่ออนิเมชั่นแบบเฟียสๆ ตอนใส่ Perk
+    public string Door_Open_Anim_Name = "Door_Open_00"; // 🚪 ชื่ออนิเมชั่นเปิดประตูของฝั่ง Door
     public Transform Player_P_T;
     public bool isLoadNextRoom = true;
 
@@ -107,6 +109,24 @@ public class Door : MonoBehaviour
         CharacterController cc = player.GetComponent<CharacterController>();
         Animator animator = player.GetComponentInChildren<Animator>();
 
+        // 🔍 เช็ค Perk จาก PlayerPrefs (ถ้ามีค่าเป็น 1 แสดงว่าปลดล็อค Perk แล้ว)
+        bool hasPerk01 = PlayerPrefs.GetInt("PERK_01", 0) == 1;
+
+        // ⚙️ คำนวณความเร็ว: ถ้ามี Perk จะลดเวลาเคลื่อนที่ลง 15% (เร็วขึ้น)
+        float currentMoveDuration = moveDuration;
+        float currentWaitTime = waitTime;
+        float doorAnimSpeed = 1f;
+        float audioPitch = 1f; // 🎵 ตัวแปรคุมความเร็ว/Pitch ของเสียง
+
+        if (hasPerk01)
+        {
+            currentMoveDuration *= 0.85f;
+            currentWaitTime *= 0.85f;
+            doorAnimSpeed = 1.9f;
+            audioPitch = 1.25f; // 🎵 เร่ง Pitch ของเสียงขึ้น 25% (เพื่อให้เสียงกระชับและจบไวขึ้นตามอนิเมชั่น)
+            Debug.Log("<color=cyan>✨ [Perk Active] PERK_01 ทำงาน! สลับไปเล่นอนิเมชั่น PushDoor_Faster และเร่งเสียงให้ไวขึ้น!</color>");
+        }
+
         if (isLoadNextRoom)
         {
             RoomManager roomManager = FindAnyObjectByType<RoomManager>();
@@ -114,8 +134,21 @@ public class Door : MonoBehaviour
                 roomManager.LoadNextRoom();
         }
 
+        // 🏃‍♂️ เช็คเงื่อนไขเลือกอนิเมชั่นผู้เล่น
         if (animator != null)
-            animator.Play(Anim_Name);
+        {
+            string targetAnim = hasPerk01 ? Fast_Anim_Name : Anim_Name;
+            animator.speed = 1f;
+            animator.Play(targetAnim);
+        }
+
+        // 🚪 สั่งเล่นอนิเมชั่นประตูพร้อมปรับ Speed ตาม Perk
+        if (Door_Animator != null)
+        {
+            Door_Animator.enabled = true;
+            Door_Animator.speed = doorAnimSpeed;
+            Door_Animator.Play(Door_Open_Anim_Name);
+        }
 
         if (tpc != null)
             tpc.CanMove = false;
@@ -130,13 +163,18 @@ public class Door : MonoBehaviour
 
         float elapsed = 0f;
 
+        // 🎵 เล่นเสียงพร้อมกำหนด Pitch (ถ้าใส่ Perk เสียงจะเล่นไวและกระชับขึ้น)
         if (AS != null && AC != null)
+        {
+            AS.pitch = audioPitch; // ปรับความเร็วเสียงตาม Perk
             AS.PlayOneShot(AC);
+        }
 
-        while (elapsed < moveDuration)
+        // 🏃‍♂️ ใช้ค่า currentMoveDuration ที่คำนวณ Perk แล้วในการ Lerp ขยับตัวผู้เล่น
+        while (elapsed < currentMoveDuration)
         {
             elapsed += Time.deltaTime;
-            float t = Mathf.Clamp01(elapsed / moveDuration);
+            float t = Mathf.Clamp01(elapsed / currentMoveDuration);
             t = Mathf.SmoothStep(0f, 1f, t);
 
             player.transform.position = Vector3.Lerp(startPosition, targetPosition, t);
@@ -147,6 +185,12 @@ public class Door : MonoBehaviour
 
         player.transform.SetPositionAndRotation(targetPosition, targetRotation);
 
+        // 🔄 คืนค่า Pitch ของเสียงกลับมาเป็น 1 (ปกติ) เพื่อไม่ให้เสียงอื่นในเกมเพี้ยนตามไปด้วย
+        if (AS != null)
+        {
+            AS.pitch = 1f;
+        }
+
         if (cc != null)
             cc.enabled = true;
 
@@ -156,7 +200,7 @@ public class Door : MonoBehaviour
         if (Door_Animator != null)
             Door_Animator.enabled = true;
 
-        yield return new WaitForSeconds(waitTime);
+        yield return new WaitForSeconds(currentWaitTime);
 
         if (tpc != null)
             tpc.CanMove = true;

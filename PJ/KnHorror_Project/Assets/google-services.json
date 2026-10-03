@@ -1,0 +1,40 @@
+{
+  "project_info": {
+    "project_number": "711317947999",
+    "firebase_url": "https://bangkokcenter-default-rtdb.asia-southeast1.firebasedatabase.app",
+    "project_id": "bangkokcenter",
+    "storage_bucket": "bangkokcenter.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:711317947999:android:11083f60a30be482fb7dea",
+        "android_client_info": {
+          "package_name": "com.snakesnakefishfish.fog"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "711317947999-qgc4d6metcosrb0druc7be5ngu3tqc40.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyAKY7DOfy_trwYnV64_TrfF3qP5EYcnvMg"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "711317947999-qgc4d6metcosrb0druc7be5ngu3tqc40.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

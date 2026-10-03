@@ -1,5 +1,6 @@
-﻿using UnityEngine;
+﻿using System.Collections.Generic;
 using TMPro;
+using UnityEngine;
 
 public class ScoreManager : MonoBehaviour
 {
@@ -13,15 +14,16 @@ public class ScoreManager : MonoBehaviour
     public Transform canvasTransform; // Canvas ที่ให้ Pop-up ไปเกิด
 
     [Header("UI Display Texts (ลาก TextMeshProUGUI มาใส่ตรงนี้แม่)")]
-    public TextMeshProUGUI roomText;          // แสดงจำนวนห้องที่ผ่านมา
-    public TextMeshProUGUI healText;          // แสดงจำนวนการฮีล
-    public TextMeshProUGUI resistText;        // แสดงจำนวนการขัดขืน
-    public TextMeshProUGUI monsterKillText;   // แสดงจำนวนมอนสเตอร์ที่กำจัด
+    public TextMeshProUGUI roomText;         // แสดงจำนวนห้องที่ผ่านมา
+    public TextMeshProUGUI healText;         // แสดงจำนวนการฮีล
+    public TextMeshProUGUI resistText;       // แสดงจำนวนการขัดขืน
+    public TextMeshProUGUI monsterKillText;  // แสดงจำนวนมอนสเตอร์ที่กำจัด
     public TextMeshProUGUI distanceText;      // แสดงระยะทางที่เดิน
+    public TextMeshProUGUI moneyText;         // 💰 แสดงจำนวนเงินสะสม
 
     [Header("Score Data")]
-    public int passedRoomsCount = 0;        // จำนวนห้องที่ผ่านมาแล้ว
-    public int successfulHealsCount = 0;    // จำนวนการฮีลสำเร็จ
+    public int passedRoomsCount = 0;         // จำนวนห้องที่ผ่านมาแล้ว
+    public int successfulHealsCount = 0;     // จำนวนการฮีลสำเร็จ
     public int successfulResistsCount = 0; // จำนวนสำเร็จการขัดขืน
     public int monsterKillsCount = 0;      // จำนวนที่สามารถทำให้มอนสเตอร์ตายได้
     public float totalDistanceWalked = 0f; // ระยะทางที่เดินได้ (เมตร)
@@ -29,13 +31,14 @@ public class ScoreManager : MonoBehaviour
     private Vector3 lastPlayerPosition;
     private bool isTrackingDistance = false;
 
+    private const string MONEY_KEY = "MONEY_DATA"; // คีย์สำหรับเซฟ PlayerPrefs
+
     private void Awake()
     {
         // Singleton Pattern
         if (Instance == null)
         {
             Instance = this;
-            DontDestroyOnLoad(gameObject);
         }
         else
         {
@@ -96,11 +99,15 @@ public class ScoreManager : MonoBehaviour
     // ----------------------------------------------------
     private void UpdateAllUI()
     {
-        if (roomText != null) roomText.text = $"Rooms: {passedRoomsCount}";
+        if (roomText != null)
+            roomText.text = $"Rooms: {passedRoomsCount} (You get {passedRoomsCount} Coin!)";
+
         if (healText != null) healText.text = $"Heals: {successfulHealsCount}";
         if (resistText != null) resistText.text = $"Resists: {successfulResistsCount}";
         if (monsterKillText != null) monsterKillText.text = $"Monsters: {monsterKillsCount}";
         if (distanceText != null) distanceText.text = $"Distance: {GetWalkedDistanceInMetersRounded()} m";
+
+        UpdateMoneyUI();
     }
 
     private void UpdateDistanceUI()
@@ -111,52 +118,68 @@ public class ScoreManager : MonoBehaviour
         }
     }
 
+    private void UpdateMoneyUI()
+    {
+        if (moneyText != null)
+        {
+            int savedMoney = PlayerPrefs.GetInt(MONEY_KEY, 0);
+            moneyText.text = $"Money: {savedMoney} Baht";
+        }
+    }
+
     // ----------------------------------------------------
     // 🔤 HELPER METHOD: SPAWN POP-UP UI
     // ----------------------------------------------------
     private void ShowPopUp(string message)
     {
-        if (popUpPrefab == null)
-        {
-            Debug.LogWarning("ScoreManager: ยังไม่ได้ใส่ popUpPrefab ใน Inspector จ้าแม่!");
-            return;
-        }
-
-        if (canvasTransform == null)
-        {
-            Canvas canvas = FindFirstObjectByType<Canvas>();
-            if (canvas != null)
-            {
-                canvasTransform = canvas.transform;
-            }
-        }
-
         if (canvasTransform != null)
         {
             GameObject popUpObj = Instantiate(popUpPrefab, canvasTransform, false);
-
             TextMeshProUGUI textComp = popUpObj.GetComponent<TextMeshProUGUI>();
-            if (textComp == null)
-            {
-                textComp = popUpObj.GetComponentInChildren<TextMeshProUGUI>();
-            }
+            if (textComp == null) textComp = popUpObj.GetComponentInChildren<TextMeshProUGUI>();
 
-            if (textComp != null)
-            {
-                textComp.text = message;
-            }
+            if (textComp != null) textComp.text = message;
         }
     }
 
     // ----------------------------------------------------
-    // 🔔 PUBLIC METHODS (บวกคะแนน + อัปเดต UI + เด้ง Pop-up)
+    // 🔔 PUBLIC METHODS (บวกคะแนน + อัปเดต UI + แจ้ง QuestManager)
     // ----------------------------------------------------
 
     public void AddPassedRoom(int amount = 1)
     {
-        passedRoomsCount += amount;
-        if (roomText != null) roomText.text = $"Rooms: {passedRoomsCount}";
+        passedRoomsCount += (amount);
+
+        if (roomText != null)
+            roomText.text = $"Rooms: {passedRoomsCount+1} (You get {passedRoomsCount+1} Coin!)";
+
         ShowPopUp($"Room Cleared! +{amount}");
+
+        // 🔗 ส่งข้อมูลแจ้ง QuestManager ว่าเปิด/ผ่านห้องแล้ว
+        if (QuestManager.Instance != null)
+        {
+            QuestManager.Instance.NotifyRoomOpened();
+        }
+    }
+
+    public void CalculateAndSaveEndGameMoney()
+    {
+        int earnedMoney = passedRoomsCount+1;
+        int currentMoney = PlayerPrefs.GetInt(MONEY_KEY, 0);
+        int totalMoney = currentMoney + earnedMoney;
+
+        PlayerPrefs.SetInt(MONEY_KEY, totalMoney);
+        PlayerPrefs.Save();
+
+        if (roomText != null)
+            roomText.text = $"Rooms: {passedRoomsCount+1} (You get {earnedMoney+1} Coin!)";
+
+        if (moneyText != null)
+        {
+            moneyText.text = $"Got {earnedMoney} Money!\nTotal: {totalMoney} Baht";
+        }
+
+        Debug.Log($"<color=green>💰 [FOG Economy] ผ่านไป {passedRoomsCount} ห้อง ได้รับเงิน {earnedMoney} บาท! ยอดรวมทั้งหมด: {totalMoney} บาท</color>");
     }
 
     public void AddSuccessfulHeal(int amount = 1)
@@ -164,6 +187,12 @@ public class ScoreManager : MonoBehaviour
         successfulHealsCount += amount;
         if (healText != null) healText.text = $"Heals: {successfulHealsCount}";
         ShowPopUp($"Heal successful! +{amount}");
+
+        // 🔗 ส่งข้อมูลแจ้ง QuestManager ว่าฮีลแล้ว
+        if (QuestManager.Instance != null)
+        {
+            QuestManager.Instance.NotifyHeal();
+        }
     }
 
     public void AddSuccessfulResist(int amount = 1)
@@ -171,6 +200,12 @@ public class ScoreManager : MonoBehaviour
         successfulResistsCount += amount;
         if (resistText != null) resistText.text = $"Resists: {successfulResistsCount}";
         ShowPopUp($"Resist successful! +{amount}");
+
+        // 🔗 ส่งข้อมูลแจ้ง QuestManager ว่าขัดขืนแล้ว
+        if (QuestManager.Instance != null)
+        {
+            QuestManager.Instance.NotifyResist();
+        }
     }
 
     public void AddMonsterKill(int amount = 1)
@@ -178,6 +213,12 @@ public class ScoreManager : MonoBehaviour
         monsterKillsCount += amount;
         if (monsterKillText != null) monsterKillText.text = $"Monsters: {monsterKillsCount}";
         ShowPopUp($"Monster Defeated! +{amount}");
+
+        // 🔗 ส่งข้อมูลแจ้ง QuestManager ว่าฆ่ามอนสเตอร์แล้ว
+        if (QuestManager.Instance != null)
+        {
+            QuestManager.Instance.NotifyMonsterKilled();
+        }
     }
 
     public void ResetScore()
@@ -193,20 +234,12 @@ public class ScoreManager : MonoBehaviour
             lastPlayerPosition = playerTransform.position;
         }
 
-        UpdateAllUI(); // รีเซ็ตหน้าจอ UI ทั้งหมดด้วย
+        UpdateAllUI();
     }
 
     // ----------------------------------------------------
     // 📊 GETTERS FOR UI / SUMMARY MENU
     // ----------------------------------------------------
-
-    public float GetWalkedDistanceInMeters()
-    {
-        return totalDistanceWalked;
-    }
-
-    public int GetWalkedDistanceInMetersRounded()
-    {
-        return Mathf.RoundToInt(totalDistanceWalked);
-    }
+    public float GetWalkedDistanceInMeters() => totalDistanceWalked;
+    public int GetWalkedDistanceInMetersRounded() => Mathf.RoundToInt(totalDistanceWalked);
 }

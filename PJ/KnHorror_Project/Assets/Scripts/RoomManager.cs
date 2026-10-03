@@ -1,22 +1,26 @@
-﻿using System.Collections.Generic; // อย่าลืมใส่บรรทัดนี้นะจ๊ะแม่
+﻿using System.Collections.Generic;
 using TMPro;
 using UnityEngine;
+using UnityEngine.Events;
 
 public class RoomManager : MonoBehaviour
 {
+    [Header("Room Prefabs")]
+    [Tooltip("รายชื่อห้องปกติที่จะสุ่มสร้างขึ้นเรื่อยๆ")]
     public GameObject[] PrefabRoom;
+
+    [Tooltip("Prefab ห้องสุดท้าย (LastRoom) ที่จะ Spawn ออกมาเมื่อผ่านครบเป้าหมาย")]
+    public GameObject LastRoomPrefab;
+
+    [Header("Settings & UI")]
     public int IndexRandom;
     public GameObject PrefabNextRoomUiPopUp;
     public int IndexRoom;
     public Transform Canva;
-    Vector3 NewRoomLoadPos;
+    private Vector3 NewRoomLoadPos;
 
-    [Header("Room Cleanup Settings")]
-    [Tooltip("จำนวนห้องเก่าด้านหลังที่ต้องการเก็บไว้ (แนะนำ 2 หรือ 3 ห้องกำลังสวยจ่ะแม่)")]
-    public int maxRoomsToKeep = 2;
-
-    // เก็บรายการห้องทั้งหมดที่ถูกสร้างขึ้นมา
-    private List<GameObject> spawnedRooms = new List<GameObject>();
+    [Header("Events")]
+    public UnityEvent UnityEvent;
 
     public void LoadNextRoom()
     {
@@ -25,9 +29,24 @@ public class RoomManager : MonoBehaviour
         // 🎯 เช็คว่าผ่านห้องครบตามเป้าหมาย (Goal) จาก GameManager หรือยัง
         int targetGoal = (GameManager.Instance != null) ? GameManager.Instance.roomGoalCount : 50;
 
+        // ถ้าเดินมาถึงห้องที่เป็นเป้าหมายสุดท้ายพอดี ให้ Spawn "LastRoom" แทนห้องปกติจ่ะแม่!
         if (IndexRoom >= targetGoal)
         {
-            Debug.Log($"<color=magenta><b>[GAME CLEAR!]</b> แม่ขา! ผ่านครบ {targetGoal} ห้องตามเป้าหมายแล้ว เริ่ดมากกก! 👑✨</color>");
+            // ขยับตำแหน่ง Z ไปข้างหน้าสำหรับห้องสุดท้าย
+            NewRoomLoadPos.z += 10;
+
+            if (LastRoomPrefab != null)
+            {
+                GameObject lastRoomInstance = Instantiate(LastRoomPrefab, NewRoomLoadPos, Quaternion.identity);
+                Debug.Log("<color=magenta>🏨 [FOG] ถึงห้องสุดท้ายแล้วแม่! Spawn LastRoom เรียบร้อย!</color>");
+            }
+            else
+            {
+                Debug.LogWarning("⚠️ ยังไม่ได้ใส่ Prefab ห้องสุดท้าย (LastRoomPrefab) ใน Inspector จ่ะแม่!");
+            }
+
+            // สั่งรัน UnityEvent เพิ่มเติม (เช่น ตัดเข้าคัทซีน, ล็อกประตู, หรือเปิดเพลงบอส)
+            UnityEvent.Invoke();
             return;
         }
 
@@ -36,31 +55,10 @@ public class RoomManager : MonoBehaviour
             ScoreManager.Instance.AddPassedRoom();
         }
 
-        // 1. สร้างห้องใหม่
+        // 1. สร้างห้องปกติทั่วไป
         GameObject r = Instantiate(PrefabRoom[IndexRandom = Random.Range(0, PrefabRoom.Length)]);
         NewRoomLoadPos.z += 10;
         r.transform.position = NewRoomLoadPos;
-
-        // บันทึกห้องใหม่ลงในลิสต์รายชื่อ
-        spawnedRooms.Add(r);
-
-        // 2. 💅 ระบบทำลายห้องเก่าทิ้งแบบตัวแม่ (เก่าไปใหม่มา ไม่เก็บขยะไว้รกบ้าน)
-        // ถ้าจำนวนห้องในลิสต์ มากกว่าจำนวนห้องที่เราอยากเก็บสำรองไว้
-        if (spawnedRooms.Count > maxRoomsToKeep)
-        {
-            // ดึงห้องที่เก่าที่สุด (ตัวแรกสุดในลิสต์) ออกมา
-            GameObject oldRoom = spawnedRooms[0];
-
-            // เอาออกจากลิสต์
-            spawnedRooms.RemoveAt(0);
-
-            // สั่งทำลาย (Destroy) ทิ้งจากเกมทันที เริ่ดๆ ประหยัดเมม!
-            if (oldRoom != null)
-            {
-                Destroy(oldRoom);
-                Debug.Log($"<color=orange>🧹 ทำลายห้องเก่าทิ้งเรียบร้อย เพื่อความลื่นไหลของเกมจ่ะแม่!</color>");
-            }
-        }
 
         if (RuntimeNavMeshManager.Instance != null)
         {
@@ -71,7 +69,7 @@ public class RoomManager : MonoBehaviour
         {
             GameObject p = Instantiate(PrefabNextRoomUiPopUp, Canva, false);
             TextMeshProUGUI t = p.transform.GetChild(0).GetComponent<TextMeshProUGUI>();
-            if (t != null)
+            if ( t != null) // เช็คตัวแปรข้อความ UI
             {
                 t.text = "Room " + IndexRoom;
             }

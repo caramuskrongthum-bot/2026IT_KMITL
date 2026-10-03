@@ -813,7 +813,7 @@ MonoBehaviour:
   detectionRange: 8
   attackRange: 1.39
   attackCooldown: 1
-  attackDamage: 5
+  attackDamage: 15
   maxHealth: 100
   startDelay: 3
   enemyHealthBar: {fileID: 373806655061031348}
@@ -874,6 +874,10 @@ MonoBehaviour:
   EventEvery5Seconds:
     m_PersistentCalls:
       m_Calls: []
+  MakePlayerDizzy:
+    m_PersistentCalls:
+      m_Calls: []
+  eventInterval: 5
   VFX_Blood: {fileID: 8803677287396982325, guid: 67167997aef63f44f9fb2100c5a06b5f, type: 3}
   VFX_Player: {fileID: 4269751714378969894}
   AudioSource: {fileID: 292055364645362241}
@@ -882,6 +886,16 @@ MonoBehaviour:
   jumpSpeed: 5
   jumpHeight: 2
   WaitEvent: 0
+  destroyDelay: 1.5
+  isSCPMode: 0
+  isTeleportAssassinate: 0
+  isBullRushMode: 0
+  isGazeStunMode: 0
+  bullRushSpeed: 15
+  bullRushDelay: 1.5
+  scpTriggerDistance: 3.5
+  scpStopDelay: 1
+  ThirdPersonController: {fileID: 0}
 --- !u!114 &4988849178563250405
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -1077,7 +1091,7 @@ PrefabInstance:
     - target: {fileID: -8784059403017108957, guid: 7d3f3fbea4ec26943a68803d2ac4576e, type: 3}
       propertyPath: 'm_Materials.Array.data[0]'
       value: 
-      objectReference: {fileID: 2100000, guid: c2b66c702bb6e25498f02ca8d56a819a, type: 2}
+      objectReference: {fileID: 2100000, guid: 4d007fe7fdc60a440963e9bdea9dcade, type: 2}
     - target: {fileID: -8679921383154817045, guid: 7d3f3fbea4ec26943a68803d2ac4576e, type: 3}
       propertyPath: m_LocalPosition.x
       value: 0

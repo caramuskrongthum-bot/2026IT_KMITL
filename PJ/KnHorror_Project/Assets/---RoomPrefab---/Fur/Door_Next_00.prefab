@@ -875,6 +875,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: '::'
   Door_Animator: {fileID: 3412042743055391600}
+  Anim_Name: PushDoor
   Player_P_T: {fileID: 1703321005348233699}
   isLoadNextRoom: 1
   moveDuration: 0.5
@@ -896,7 +897,7 @@ MonoBehaviour:
           m_IntArgument: 0
           m_FloatArgument: 0
           m_StringArgument: 
-          m_BoolArgument: 1
+          m_BoolArgument: 0
         m_CallState: 2
   G: {fileID: 0}
 --- !u!1001 &548401962447792556

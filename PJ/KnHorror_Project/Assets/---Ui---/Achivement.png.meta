@@ -276,6 +276,28 @@ TextureImporter:
       indices: 
       edges: []
       weights: []
+    - serializedVersion: 2
+      name: Achivement_7
+      rect:
+        serializedVersion: 2
+        x: 426
+        y: 2
+        width: 426
+        height: 426
+      alignment: 0
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: 12e513ad4e7d7da4086a595d98cb541e
+      internalID: -1887519304
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
     outline: []
     customData: 
     physicsShape: []
@@ -301,6 +323,7 @@ TextureImporter:
       Achivement_4: 54385186
       Achivement_5: -204242030
       Achivement_6: 258871269
+      Achivement_7: -1887519304
   mipmapLimitGroupName: 
   pSDRemoveMatte: 0
   userData: 
