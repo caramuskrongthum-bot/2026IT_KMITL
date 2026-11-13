@@ -1,0 +1,654 @@
+<!DOCTYPE html>
+<html lang="th" class="dark">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="theme-color" content="#09090d">
+  <title>FOG: Fear Of Guilt | ลงทะเบียนรับสกินฟรี รหัส 5</title>
+
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@600;700;900&family=Prompt:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+
+  <script>
+    tailwind.config = {
+      darkMode: 'class',
+      theme: {
+        extend: {
+          fontFamily: { cinzel: ['Cinzel', 'serif'], prompt: ['Prompt', 'sans-serif'] },
+          colors: {
+            obsidian: '#09090d', charcoal: '#121218',
+            crimson: { DEFAULT: '#991b1b', bright: '#dc2626', dark: '#450a0a' },
+            gold: { DEFAULT: '#d4af37', light: '#f3e5ab', dark: '#8a6d1c' }
+          },
+          animation: {
+            'pulse-slow': 'pulse 4s cubic-bezier(0.4, 0, 0.6, 1) infinite',
+            float: 'float 6s ease-in-out infinite',
+            glow: 'glow 2.5s ease-in-out infinite alternate'
+          },
+          keyframes: {
+            float: { '0%, 100%': { transform: 'translateY(0)' }, '50%': { transform: 'translateY(-10px)' } },
+            glow: {
+              '0%': { boxShadow: '0 0 15px rgba(212,175,55,.25), 0 0 30px rgba(220,38,38,.15)' },
+              '100%': { boxShadow: '0 0 28px rgba(212,175,55,.65), 0 0 50px rgba(220,38,38,.35)' }
+            }
+          }
+        }
+      }
+    };
+  </script>
+
+  <style>
+    body { font-family: 'Prompt', sans-serif; background: #09090d; color: #f3f4f6; overflow-x: hidden; }
+    .fog-bg {
+      background:
+        radial-gradient(circle at 20% 20%, rgba(153,27,27,.16) 0%, transparent 45%),
+        radial-gradient(circle at 80% 80%, rgba(212,175,55,.08) 0%, transparent 45%),
+        radial-gradient(circle at 50% 50%, #111118 0%, #07070a 100%);
+    }
+    .glass-card {
+      background: rgba(18,18,26,.82); backdrop-filter: blur(16px); -webkit-backdrop-filter: blur(16px);
+      border: 1px solid rgba(212,175,55,.22); box-shadow: 0 25px 50px -12px rgba(0,0,0,.85);
+    }
+    .victorian-border { position: relative; }
+    .victorian-border::before {
+      content: ''; position: absolute; inset: 6px; border: 1px solid rgba(212,175,55,.12);
+      border-radius: 1rem; pointer-events: none;
+    }
+    ::-webkit-scrollbar { width: 6px; }
+    ::-webkit-scrollbar-track { background: #09090d; }
+    ::-webkit-scrollbar-thumb { background: #3f3f46; border-radius: 9999px; }
+    ::-webkit-scrollbar-thumb:hover { background: #d4af37; }
+    .particle {
+      position: fixed; pointer-events: none; border-radius: 50%; z-index: 9999;
+      animation: particleFly 1s ease-out forwards;
+    }
+    @keyframes particleFly {
+      0% { transform: translate(0,0) scale(1); opacity: 1; }
+      100% { transform: translate(var(--tx),var(--ty)) scale(0); opacity: 0; }
+    }
+    button:disabled { opacity: .65; cursor: wait; }
+    .modal-backdrop { overscroll-behavior: contain; }
+  </style>
+</head>
+
+<body class="fog-bg min-h-screen flex flex-col justify-between selection:bg-crimson selection:text-white">
+  <div id="toast-container" class="fixed top-4 left-1/2 -translate-x-1/2 z-[10000] w-[92%] max-w-md pointer-events-none flex flex-col gap-2" aria-live="polite"></div>
+
+  <header class="w-full border-b border-white/10 bg-black/40 backdrop-blur-md sticky top-0 z-30">
+    <div class="max-w-4xl mx-auto px-4 py-3 flex flex-wrap items-center justify-between gap-2">
+      <div class="flex items-center gap-2.5">
+        <div class="w-9 h-9 rounded-lg bg-gradient-to-br from-crimson-bright to-crimson-dark border border-gold/40 flex items-center justify-center shadow-lg">
+          <i class="fa-solid fa-ghost text-gold text-sm"></i>
+        </div>
+        <div>
+          <span class="font-cinzel font-bold tracking-widest text-white text-base sm:text-lg block leading-none">FOG</span>
+          <span class="text-[10px] text-gold/80 tracking-wider uppercase">Fear Of Guilt Portal</span>
+        </div>
+      </div>
+      <div class="flex items-center gap-2">
+        <span id="connection-badge" class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium bg-amber-500/10 text-amber-300 border border-amber-500/30">
+          <span class="w-2 h-2 rounded-full bg-amber-400 animate-pulse"></span>
+          <span id="connection-text">กำลังเชื่อมต่อ Firebase...</span>
+        </span>
+        <button type="button" onclick="openModal('qr-modal')" class="px-3 py-1.5 rounded-lg bg-white/5 hover:bg-white/10 border border-gold/30 text-gold text-xs sm:text-sm font-medium transition flex items-center gap-1.5 active:scale-95">
+          <i class="fa-solid fa-qrcode"></i><span>สร้าง QR Code</span>
+        </button>
+      </div>
+    </div>
+  </header>
+
+  <main class="flex-grow flex items-center justify-center px-4 py-8 sm:py-12">
+    <div class="w-full max-w-md">
+      <div class="text-center mb-6">
+        <div class="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-crimson/20 border border-crimson-bright/40 text-red-300 text-xs font-medium mb-3">
+          <i class="fa-solid fa-ticket text-gold"></i><span>กิจกรรมพิเศษสำหรับผู้ร่วมงาน • สแกน QR รับของรางวัล</span>
+        </div>
+        <h1 class="font-cinzel text-4xl sm:text-5xl font-black tracking-[0.18em] text-transparent bg-clip-text bg-gradient-to-b from-white via-gray-200 to-gray-500 drop-shadow-[0_2px_12px_rgba(220,38,38,0.45)]">FOG</h1>
+        <p class="font-cinzel text-xs sm:text-sm tracking-[0.35em] text-gold/90 mt-1 uppercase">Fear Of Guilt</p>
+      </div>
+
+      <div class="flex items-center justify-center gap-3 mb-6">
+        <div id="step-dot-1" class="flex items-center gap-2 px-3 py-1.5 rounded-full bg-crimson/30 border border-crimson-bright text-white text-xs font-medium transition-all">
+          <span class="w-5 h-5 rounded-full bg-crimson-bright text-white flex items-center justify-center text-[11px] font-bold">1</span><span>ลงทะเบียนบัญชี</span>
+        </div>
+        <div class="w-6 h-[1px] bg-white/20"></div>
+        <div id="step-dot-2" class="flex items-center gap-2 px-3 py-1.5 rounded-full bg-white/5 border border-white/10 text-gray-400 text-xs font-medium transition-all">
+          <span class="w-5 h-5 rounded-full bg-white/10 text-gray-400 flex items-center justify-center text-[11px] font-bold">2</span><span>รับสกินรหัส 5</span>
+        </div>
+      </div>
+
+      <section id="step-1-card" class="glass-card victorian-border rounded-2xl p-6 sm:p-8 transition-all duration-500">
+        <div class="text-center mb-6">
+          <h2 class="text-xl sm:text-2xl font-bold text-white">สร้างบัญชีผู้เล่นใหม่</h2>
+          <p class="text-xs sm:text-sm text-gray-400 mt-1">ลงทะเบียนเพื่อเชื่อมข้อมูลกับตัวเกม PC และปลดล็อกสิทธิ์รับ <span class="text-gold font-medium">สกินพิเศษ รหัส 5</span> ฟรีทันที!</p>
+        </div>
+
+        <form id="register-form" class="space-y-4">
+          <div id="username-field">
+            <label for="username" class="block text-xs font-medium text-gray-300 mb-1.5">ชื่อผู้เล่นในเกม (Display Name) <span class="text-crimson-bright">*</span></label>
+            <div class="relative">
+              <span class="absolute inset-y-0 left-0 pl-3.5 flex items-center text-gray-400"><i class="fa-solid fa-user-secret"></i></span>
+              <input type="text" id="username" required minlength="3" maxlength="20" autocomplete="nickname" placeholder="เช่น Guest_099 หรือชื่อเท่ๆ ของคุณ" class="w-full pl-10 pr-4 py-3 rounded-xl bg-black/60 border border-white/15 text-white placeholder-gray-500 text-sm focus:outline-none focus:border-gold focus:ring-1 focus:ring-gold transition">
+            </div>
+          </div>
+
+          <div>
+            <label for="email" class="block text-xs font-medium text-gray-300 mb-1.5">อีเมลสำหรับล็อกอินเข้าเกม <span class="text-crimson-bright">*</span></label>
+            <div class="relative">
+              <span class="absolute inset-y-0 left-0 pl-3.5 flex items-center text-gray-400"><i class="fa-solid fa-envelope"></i></span>
+              <input type="email" id="email" required autocomplete="email" placeholder="player@example.com" class="w-full pl-10 pr-4 py-3 rounded-xl bg-black/60 border border-white/15 text-white placeholder-gray-500 text-sm focus:outline-none focus:border-gold focus:ring-1 focus:ring-gold transition">
+            </div>
+          </div>
+
+          <div>
+            <label for="password" class="block text-xs font-medium text-gray-300 mb-1.5">รหัสผ่าน (อย่างน้อย 6 ตัวอักษร) <span class="text-crimson-bright">*</span></label>
+            <div class="relative">
+              <span class="absolute inset-y-0 left-0 pl-3.5 flex items-center text-gray-400"><i class="fa-solid fa-key"></i></span>
+              <input type="password" id="password" required minlength="6" autocomplete="new-password" placeholder="••••••••" class="w-full pl-10 pr-11 py-3 rounded-xl bg-black/60 border border-white/15 text-white placeholder-gray-500 text-sm focus:outline-none focus:border-gold focus:ring-1 focus:ring-gold transition">
+              <button type="button" onclick="togglePasswordVisibility('password', this)" class="absolute inset-y-0 right-0 pr-3.5 flex items-center text-gray-400 hover:text-white" aria-label="แสดงหรือซ่อนรหัสผ่าน"><i class="fa-solid fa-eye text-sm"></i></button>
+            </div>
+          </div>
+
+          <div id="confirm-field">
+            <label for="confirm-password" class="block text-xs font-medium text-gray-300 mb-1.5">ยืนยันรหัสผ่านอีกครั้ง <span class="text-crimson-bright">*</span></label>
+            <div class="relative">
+              <span class="absolute inset-y-0 left-0 pl-3.5 flex items-center text-gray-400"><i class="fa-solid fa-shield-halved"></i></span>
+              <input type="password" id="confirm-password" required minlength="6" autocomplete="new-password" placeholder="••••••••" class="w-full pl-10 pr-4 py-3 rounded-xl bg-black/60 border border-white/15 text-white placeholder-gray-500 text-sm focus:outline-none focus:border-gold focus:ring-1 focus:ring-gold transition">
+            </div>
+          </div>
+
+          <button type="submit" id="btn-register" class="w-full mt-2 py-3.5 px-6 rounded-xl bg-gradient-to-r from-crimson-dark via-crimson-bright to-crimson-dark hover:brightness-110 border border-gold/40 text-white font-semibold text-base shadow-[0_0_25px_rgba(220,38,38,0.4)] transition-all duration-200 flex items-center justify-center gap-2 active:scale-[0.98]">
+            <span>ลงทะเบียนบัญชีเกม FOG</span><i class="fa-solid fa-arrow-right"></i>
+          </button>
+        </form>
+
+        <div class="mt-5 pt-4 border-t border-white/10 text-center">
+          <button type="button" onclick="toggleAuthMode()" id="toggle-auth-btn" class="text-xs text-gray-400 hover:text-gold transition">มีบัญชีเกม FOG อยู่แล้ว? <span class="underline text-gold">เข้าสู่ระบบเพื่อรับสกินรหัส 5</span></button>
+        </div>
+      </section>
+
+      <section id="step-2-card" class="hidden glass-card victorian-border rounded-2xl p-6 sm:p-8 text-center transition-all duration-500">
+        <div class="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-emerald-500/15 border border-emerald-500/30 text-emerald-300 text-xs font-medium mb-4">
+          <i class="fa-solid fa-circle-check"></i><span>ยืนยันตัวตนสำเร็จ! ยินดีต้อนรับคุณ <strong id="display-player-name" class="text-white">Player</strong></span>
+        </div>
+        <h2 class="text-xl sm:text-2xl font-bold text-white">ของขวัญต้อนรับผู้เข้าพัก</h2>
+        <p class="text-xs sm:text-sm text-gray-400 mt-1 mb-6">กดปุ่มด้านล่างเพื่อผูก <span class="text-gold font-semibold">สกินพิเศษ รหัส 5</span> เข้าสู่บัญชีของคุณทันที</p>
+
+        <div class="relative mx-auto max-w-[270px] rounded-2xl p-5 bg-gradient-to-b from-[#1d1812] via-[#141118] to-[#0d0b10] border-2 border-gold/60 animate-glow mb-6">
+          <div class="absolute -top-3 right-3 px-3 py-0.5 rounded-full bg-gradient-to-r from-gold-dark via-gold to-gold-dark text-black font-bold text-xs shadow-lg">SKIN ID: 5</div>
+          <div class="w-28 h-28 mx-auto my-2 rounded-full bg-gradient-to-tr from-crimson-dark/60 via-black to-gold/20 border border-gold/40 flex items-center justify-center relative animate-float">
+            <svg class="w-16 h-16 text-gold drop-shadow-[0_0_12px_rgba(212,175,55,0.8)]" viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg" aria-label="ภาพสัญลักษณ์สกิน">
+              <path d="M18 26H46L43 10C43 8.89543 42.1046 8 41 8H23C21.8954 8 21 8.89543 21 10L18 26Z" fill="currentColor" fill-opacity=".25" stroke="currentColor" stroke-width="2.5"/>
+              <path d="M10 26H54" stroke="currentColor" stroke-width="3" stroke-linecap="round"/>
+              <path d="M20 26V38C20 46.8366 25.3726 54 32 54C38.6274 54 44 46.8366 44 38V26" stroke="currentColor" stroke-width="2.5"/>
+              <circle cx="26.5" cy="36" r="2.5" fill="#ef4444"/><circle cx="37.5" cy="36" r="2.5" fill="#ef4444"/>
+              <text x="32" y="48" text-anchor="middle" fill="#f3e5ab" font-family="Cinzel,serif" font-weight="bold" font-size="10">V</text>
+            </svg>
+          </div>
+          <h3 class="font-cinzel text-lg font-bold text-gold tracking-wide mt-2">THE GUILTY PHANTOM</h3>
+          <p class="text-xs text-gray-300 mt-0.5">สกินพิเศษเฉพาะกิจกรรม QR Code</p>
+          <div class="mt-3 pt-2.5 border-t border-white/10 flex items-center justify-between text-[11px] text-gray-400">
+            <span>รหัสอ้างอิงในระบบ:</span><span class="font-mono text-gold font-semibold">SKIN_ID = 5</span>
+          </div>
+        </div>
+
+        <label class="inline-flex items-center gap-2 text-xs text-gray-300 mb-5 cursor-pointer select-none">
+          <input type="checkbox" id="equip-immediately" checked class="w-4 h-4 rounded accent-gold bg-black border-white/20">
+          <span>ตั้งค่าสวมใส่สกินนี้ทันทีเมื่อเข้าเกม</span>
+        </label>
+
+        <div id="claim-action-area">
+          <button type="button" id="btn-claim-skin" onclick="claimFreeSkin5()" class="w-full py-4 px-6 rounded-xl bg-gradient-to-r from-gold-dark via-gold to-gold-dark hover:brightness-110 text-black font-bold text-base sm:text-lg shadow-[0_0_30px_rgba(212,175,55,0.45)] transition-all duration-200 flex items-center justify-center gap-2.5 active:scale-[0.97]">
+            <i class="fa-solid fa-gift text-lg"></i><span>กดรับสกินฟรี (รหัสสกิน: 5)</span>
+          </button>
+        </div>
+
+        <div id="claim-success-box" class="hidden mt-2 p-4 rounded-xl bg-emerald-950/50 border border-emerald-500/40 text-left space-y-2.5">
+          <div class="flex items-center gap-2.5 text-emerald-400 font-bold text-base"><i class="fa-solid fa-crown text-gold text-xl"></i><span>รับสกินรหัส 5 สำเร็จเรียบร้อย!</span></div>
+          <p id="claim-success-description" class="text-xs text-gray-300 leading-relaxed">ระบบบันทึกข้อมูลสกินรหัส 5 แล้ว</p>
+          <div class="p-3 rounded-lg bg-black/60 border border-white/10 font-mono text-[11px] text-gray-300 space-y-1">
+            <div class="flex justify-between gap-3"><span class="text-gray-500">Player UID:</span><span id="receipt-uid" class="text-white truncate max-w-[180px]">-</span></div>
+            <div class="flex justify-between gap-3"><span class="text-gray-500">Email:</span><span id="receipt-email" class="text-white truncate max-w-[180px]">-</span></div>
+            <div class="flex justify-between"><span class="text-gray-500">Skin Code Unlocked:</span><span class="text-emerald-400 font-bold">5 (ACTIVE)</span></div>
+          </div>
+        </div>
+      </section>
+    </div>
+  </main>
+
+  <footer class="w-full py-4 px-4 text-center text-xs text-gray-500 border-t border-white/5">
+    <p>© 2026 <span class="font-cinzel text-gray-400">FOG: FEAR OF GUILT</span> • ระบบลงทะเบียนผู้เล่นและแจกไอเทมกิจกรรม</p>
+    <p class="mt-1 text-[10px] text-gray-600">เชื่อมต่อ Firebase (bangkokcenter) สำเร็จพร้อมใช้งานจริง</p>
+  </footer>
+
+  <div id="qr-modal" class="modal-backdrop fixed inset-0 z-50 hidden items-center justify-center p-4 bg-black/80 backdrop-blur-sm" role="dialog" aria-modal="true" aria-labelledby="qr-modal-title">
+    <div class="glass-card rounded-2xl max-w-sm w-full p-6 text-center relative border border-gold/40">
+      <button type="button" onclick="closeModal('qr-modal')" class="absolute top-4 right-4 w-8 h-8 rounded-full bg-white/5 hover:bg-white/15 text-gray-400 hover:text-white flex items-center justify-center" aria-label="ปิด"><i class="fa-solid fa-xmark"></i></button>
+      <h3 id="qr-modal-title" class="font-cinzel text-xl font-bold text-gold mb-1">QR CODE กิจกรรม</h3>
+      <p class="text-xs text-gray-400 mb-4">ให้ผู้เล่นสแกน QR Code นี้เพื่อลงทะเบียนและรับสกินรหัส 5 ฟรี</p>
+      <div class="bg-white p-4 rounded-2xl inline-block shadow-xl mx-auto mb-4"><div id="qrcode-container"></div></div>
+      <div class="text-left mb-4">
+        <label for="qr-url-input" class="block text-[11px] text-gray-400 mb-1">ลิงก์ปลายทางของ QR Code (ปรับแก้ได้):</label>
+        <div class="flex gap-1.5">
+          <input type="url" id="qr-url-input" class="w-full min-w-0 px-3 py-2 rounded-lg bg-black/60 border border-white/15 text-xs text-gray-200 focus:outline-none focus:border-gold">
+          <button type="button" onclick="regenerateQRCode()" class="px-3 py-2 rounded-lg bg-white/10 hover:bg-white/20 text-gold text-xs font-medium shrink-0">อัปเดต</button>
+        </div>
+      </div>
+      <div class="flex gap-2">
+        <button type="button" onclick="downloadQRCode()" class="flex-1 py-2.5 px-4 rounded-xl bg-gold text-black font-semibold text-xs hover:brightness-110 transition flex items-center justify-center gap-1.5"><i class="fa-solid fa-download"></i><span>บันทึกรูป QR</span></button>
+        <button type="button" onclick="copyQRLink()" class="flex-1 py-2.5 px-4 rounded-xl bg-white/10 text-white font-medium text-xs hover:bg-white/20 transition flex items-center justify-center gap-1.5"><i class="fa-solid fa-copy"></i><span>คัดลอกลิงก์</span></button>
+      </div>
+    </div>
+  </div>
+
+  <script type="module">
+    import { initializeApp, getApps } from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js';
+    import {
+      getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword, updateProfile
+    } from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js';
+    import {
+      getFirestore, doc, setDoc, arrayUnion, serverTimestamp
+    } from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js';
+
+    // ใส่ Firebase Config ที่คุณให้มาเรียบร้อยแล้ว
+    // Import the functions you need from the SDKs you need
+import { initializeApp } from "firebase/app";
+import { getAnalytics } from "firebase/analytics";
+// TODO: Add SDKs for Firebase products that you want to use
+// https://firebase.google.com/docs/web/setup#available-libraries
+
+// Your web app's Firebase configuration
+// For Firebase JS SDK v7.20.0 and later, measurementId is optional
+const firebaseConfig = {
+  apiKey: "AIzaSyCA4Vghk2WEmiDvHwLNCppKenAqxIs5Oe8",
+  authDomain: "bangkokcenter.firebaseapp.com",
+  databaseURL: "https://bangkokcenter-default-rtdb.asia-southeast1.firebasedatabase.app",
+  projectId: "bangkokcenter",
+  storageBucket: "bangkokcenter.firebasestorage.app",
+  messagingSenderId: "711317947999",
+  appId: "1:711317947999:web:2a975e4948f31db1fb7dea",
+  measurementId: "G-JE9M9WMK9D"
+};
+
+// Initialize Firebase
+const app = initializeApp(firebaseConfig);
+const analytics = getAnalytics(app);
+
+    let app = null;
+    let auth = null;
+    let db = null;
+    let isLoginMode = false;
+    let currentUser = null;
+    let isSubmitting = false;
+    let isClaiming = false;
+
+    const firestoreSettings = {
+      collectionName: 'users',
+      skin5FieldName: 'SKIN_05_IDENTIFY'
+    };
+
+    const $ = (id) => document.getElementById(id);
+
+    function updateConnectionBadge(connected, projectId = '') {
+      const badge = $('connection-badge');
+      if (connected) {
+        badge.className = 'inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium bg-emerald-500/15 text-emerald-300 border border-emerald-500/30';
+        badge.replaceChildren();
+        const dot = document.createElement('span');
+        dot.className = 'w-2 h-2 rounded-full bg-emerald-400';
+        const label = document.createElement('span');
+        label.textContent = `Firebase: ${projectId}`;
+        badge.append(dot, label);
+      } else {
+        badge.className = 'inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium bg-amber-500/10 text-amber-300 border border-amber-500/30';
+        badge.replaceChildren();
+        const dot = document.createElement('span');
+        dot.className = 'w-2 h-2 rounded-full bg-amber-400 animate-pulse';
+        const label = document.createElement('span');
+        label.textContent = 'ยังไม่เชื่อม Firebase';
+        badge.append(dot, label);
+      }
+    }
+
+    function initFirebaseSystem() {
+      try {
+        app = getApps().length ? getApps()[0] : initializeApp(DEFAULT_FIREBASE_CONFIG);
+        auth = getAuth(app);
+        db = getFirestore(app);
+        updateConnectionBadge(true, DEFAULT_FIREBASE_CONFIG.projectId);
+      } catch (error) {
+        console.error('Firebase Init Error:', error);
+        updateConnectionBadge(false);
+        showToast('เริ่มต้น Firebase ไม่สำเร็จ: ' + error.message, 'error');
+      }
+    }
+
+    function showToast(message, type = 'info') {
+      const container = $('toast-container');
+      const toast = document.createElement('div');
+      const isError = type === 'error';
+      toast.className = `pointer-events-auto flex items-center gap-3 px-4 py-3 rounded-xl border shadow-2xl text-xs sm:text-sm backdrop-blur-md transition-all duration-300 ${isError ? 'bg-red-950/95 border-red-500/60 text-red-100' : 'bg-zinc-900/95 border-gold/60 text-amber-100'}`;
+
+      const icon = document.createElement('i');
+      icon.className = isError ? 'fa-solid fa-circle-exclamation text-red-400' : 'fa-solid fa-sparkles text-gold';
+      const text = document.createElement('span');
+      text.className = 'flex-1';
+      text.textContent = String(message);
+      toast.append(icon, text);
+      container.appendChild(toast);
+
+      setTimeout(() => {
+        toast.style.opacity = '0';
+        toast.style.transform = 'translateY(-10px)';
+        setTimeout(() => toast.remove(), 300);
+      }, 3500);
+    }
+
+    function goToStep2(user) {
+      $('step-1-card').classList.add('hidden');
+      $('step-2-card').classList.remove('hidden');
+
+      const dot1 = $('step-dot-1');
+      dot1.className = 'flex items-center gap-2 px-3 py-1.5 rounded-full bg-emerald-500/20 border border-emerald-500/40 text-emerald-300 text-xs font-medium';
+      dot1.querySelector('span').innerHTML = '<i class="fa-solid fa-check"></i>';
+      dot1.querySelector('span').className = 'w-5 h-5 rounded-full bg-emerald-500 text-black flex items-center justify-center text-[10px] font-bold';
+
+      const dot2 = $('step-dot-2');
+      dot2.className = 'flex items-center gap-2 px-3 py-1.5 rounded-full bg-gold/20 border border-gold text-gold text-xs font-medium shadow-[0_0_15px_rgba(212,175,55,0.3)]';
+      dot2.querySelector('span').className = 'w-5 h-5 rounded-full bg-gold text-black flex items-center justify-center text-[11px] font-bold';
+
+      $('display-player-name').textContent = user.displayName || user.email || 'Player';
+    }
+
+    $('register-form').addEventListener('submit', async (event) => {
+      event.preventDefault();
+      if (isSubmitting) return;
+
+      const username = $('username').value.trim();
+      const email = $('email').value.trim();
+      const password = $('password').value;
+      const confirmPassword = $('confirm-password').value;
+      const button = $('btn-register');
+
+      if (!isLoginMode && password !== confirmPassword) {
+        showToast('รหัสผ่านและการยืนยันรหัสผ่านไม่ตรงกัน', 'error');
+        return;
+      }
+      if (!isLoginMode && username.length < 3) {
+        showToast('ชื่อผู้เล่นต้องมีอย่างน้อย 3 ตัวอักษร', 'error');
+        return;
+      }
+
+      isSubmitting = true;
+      const originalHTML = button.innerHTML;
+      button.disabled = true;
+      button.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i><span>กำลังดำเนินการ...</span>';
+
+      try {
+        if (!auth || !db) {
+          throw new Error('ระบบ Firebase ยังไม่พร้อมใช้งาน');
+        } else if (isLoginMode) {
+          const credential = await signInWithEmailAndPassword(auth, email, password);
+          currentUser = credential.user;
+          showToast('เข้าสู่ระบบสำเร็จ! กดรับสกินรหัส 5 ได้เลย', 'success');
+        } else {
+          const credential = await createUserWithEmailAndPassword(auth, email, password);
+          currentUser = credential.user;
+          await updateProfile(currentUser, { displayName: username });
+
+          const playerRef = doc(db, firestoreSettings.collectionName, currentUser.uid);
+          const initialPlayerData = {
+            uid: currentUser.uid,
+            username,
+            email,
+            coins: 0,
+            exp: 0,
+            SKIN_WEAR: 1,
+            SKIN_01_IDENTIFY: 1,
+            [firestoreSettings.skin5FieldName]: 0,
+            unlockedSkins: [1],
+            registeredVia: 'QR_EVENT_2026',
+            createdAt: serverTimestamp()
+          };
+          await setDoc(playerRef, initialPlayerData, { merge: true });
+          showToast('สร้างบัญชีเกม FOG สำเร็จ! กดรับสกินฟรีด้านล่างได้เลย', 'success');
+        }
+
+        goToStep2(currentUser);
+      } catch (error) {
+        console.error('Auth Error:', error);
+        let message = 'เกิดข้อผิดพลาด: ' + (error.message || 'โปรดลองอีกครั้ง');
+        if (error.code === 'auth/email-already-in-use') message = 'อีเมลนี้ถูกใช้งานแล้ว ลองสลับไปเข้าสู่ระบบ';
+        else if (error.code === 'auth/weak-password') message = 'รหัสผ่านสั้นเกินไป กรุณาตั้งอย่างน้อย 6 ตัวอักษร';
+        else if (error.code === 'auth/invalid-credential' || error.code === 'auth/wrong-password' || error.code === 'auth/user-not-found') message = 'อีเมลหรือรหัสผ่านไม่ถูกต้อง กรุณาลองใหม่';
+        else if (error.code === 'auth/invalid-email') message = 'รูปแบบอีเมลไม่ถูกต้อง';
+        else if (error.code === 'permission-denied' || error.code === 'firestore/permission-denied') message = 'Firebase ปฏิเสธการเขียนข้อมูล กรุณาตรวจสอบ Firestore Rules';
+        showToast(message, 'error');
+      } finally {
+        isSubmitting = false;
+        button.disabled = false;
+        button.innerHTML = originalHTML;
+      }
+    });
+
+    window.claimFreeSkin5 = async function() {
+      if (!currentUser) {
+        showToast('ไม่พบข้อมูลผู้เล่น กรุณาลงทะเบียนหรือเข้าสู่ระบบใหม่', 'error');
+        return;
+      }
+      if (isClaiming) return;
+
+      const button = $('btn-claim-skin');
+      const equipNow = $('equip-immediately').checked;
+
+      const rect = button.getBoundingClientRect();
+      const particlePosition = {
+        x: rect.left + rect.width / 2,
+        y: rect.top + rect.height / 2
+      };
+
+      isClaiming = true;
+      const originalHTML = button.innerHTML;
+      button.disabled = true;
+      button.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i><span>กำลังส่งสกินรหัส 5 เข้าบัญชี...</span>';
+
+      try {
+        if (!db) {
+          throw new Error('ระบบฐานข้อมูลยังไม่พร้อมใช้งาน');
+        } else {
+          const playerRef = doc(db, firestoreSettings.collectionName, currentUser.uid);
+          const updatePayload = {
+            [firestoreSettings.skin5FieldName]: 1,
+            unlockedSkins: arrayUnion(5),
+            claimedSkin5At: serverTimestamp()
+          };
+          if (equipNow) updatePayload.SKIN_WEAR = 5;
+          await setDoc(playerRef, updatePayload, { merge: true });
+        }
+
+        spawnCelebrationParticles(particlePosition);
+
+        $('claim-action-area').classList.add('hidden');
+        $('claim-success-box').classList.remove('hidden');
+        $('receipt-uid').textContent = currentUser.uid;
+        $('receipt-email').textContent = currentUser.email || '-';
+
+        $('claim-success-description').textContent =
+          'Firebase ยืนยันการบันทึกสกินรหัส 5 ลงใน Firestore แล้ว กรุณาเข้าเกมด้วยบัญชีเดียวกัน';
+
+        showToast('ยินดีด้วย! ปลดล็อกสกินรหัส 5 สำเร็จแล้ว', 'success');
+      } catch (error) {
+        console.error('Claim Skin Error:', error);
+        button.disabled = false;
+        button.innerHTML = originalHTML;
+        showToast('ไม่สามารถรับสกินได้: ' + (error.message || 'โปรดลองอีกครั้ง'), 'error');
+      } finally {
+        isClaiming = false;
+      }
+    };
+
+    function spawnCelebrationParticles(position) {
+      if (!position || !Number.isFinite(position.x) || !Number.isFinite(position.y)) return;
+      const colors = ['#d4af37', '#f3e5ab', '#dc2626', '#ffffff'];
+
+      for (let i = 0; i < 28; i++) {
+        const particle = document.createElement('div');
+        particle.className = 'particle';
+        const size = Math.random() * 8 + 4;
+        const angle = Math.random() * Math.PI * 2;
+        const velocity = Math.random() * 140 + 50;
+
+        particle.style.width = `${size}px`;
+        particle.style.height = `${size}px`;
+        particle.style.backgroundColor = colors[Math.floor(Math.random() * colors.length)];
+        particle.style.left = `${position.x}px`;
+        particle.style.top = `${position.y}px`;
+        particle.style.setProperty('--tx', `${Math.cos(angle) * velocity}px`);
+        particle.style.setProperty('--ty', `${Math.sin(angle) * velocity}px`);
+
+        document.body.appendChild(particle);
+        setTimeout(() => particle.remove(), 1100);
+      }
+    }
+
+    window.toggleAuthMode = function() {
+      isLoginMode = !isLoginMode;
+      $('username-field').classList.toggle('hidden', isLoginMode);
+      $('confirm-field').classList.toggle('hidden', isLoginMode);
+      $('username').required = !isLoginMode;
+      $('confirm-password').required = !isLoginMode;
+
+      $('btn-register').innerHTML = isLoginMode
+        ? '<span>เข้าสู่ระบบเพื่อรับสกินรหัส 5</span><i class="fa-solid fa-right-to-bracket"></i>'
+        : '<span>ลงทะเบียนบัญชีเกม FOG</span><i class="fa-solid fa-arrow-right"></i>';
+
+      $('toggle-auth-btn').innerHTML = isLoginMode
+        ? 'ยังไม่มีบัญชีเกม FOG? <span class="underline text-gold">ลงทะเบียนใหม่ที่นี่</span>'
+        : 'มีบัญชีเกม FOG อยู่แล้ว? <span class="underline text-gold">เข้าสู่ระบบเพื่อรับสกินรหัส 5</span>';
+
+      $('password').autocomplete = isLoginMode ? 'current-password' : 'new-password';
+      $('confirm-password').value = '';
+    };
+
+    window.togglePasswordVisibility = function(inputId, button) {
+      const input = $(inputId);
+      const icon = button.querySelector('i');
+      const show = input.type === 'password';
+      input.type = show ? 'text' : 'password';
+      icon.classList.toggle('fa-eye', !show);
+      icon.classList.toggle('fa-eye-slash', show);
+    };
+
+    window.openModal = function(modalId) {
+      const modal = $(modalId);
+      if (!modal) return;
+      modal.classList.remove('hidden');
+      modal.classList.add('flex');
+      if (modalId === 'qr-modal') initQRCode();
+    };
+
+    window.closeModal = function(modalId) {
+      const modal = $(modalId);
+      if (!modal) return;
+      modal.classList.add('hidden');
+      modal.classList.remove('flex');
+    };
+
+    let qrInstance = null;
+
+    function initQRCode() {
+      const input = $('qr-url-input');
+      if (!input.value) {
+        const url = new URL(window.location.href);
+        url.searchParams.set('event', 'fog_skin5');
+        input.value = url.toString();
+      }
+      renderQR(input.value.trim());
+    }
+
+    function renderQR(value) {
+      if (!value) {
+        showToast('กรุณาระบุลิงก์สำหรับสร้าง QR Code', 'error');
+        return;
+      }
+      if (typeof QRCode === 'undefined') {
+        showToast('โหลดระบบ QR Code ไม่สำเร็จ กรุณาตรวจสอบอินเทอร์เน็ต', 'error');
+        return;
+      }
+      const container = $('qrcode-container');
+      container.replaceChildren();
+      qrInstance = new QRCode(container, {
+        text: value, width: 200, height: 200,
+        colorDark: '#09090d', colorLight: '#ffffff',
+        correctLevel: QRCode.CorrectLevel.H
+      });
+    }
+
+    window.regenerateQRCode = function() {
+      const value = $('qr-url-input').value.trim();
+      try {
+        new URL(value);
+        renderQR(value);
+        showToast('อัปเดต QR Code เรียบร้อยแล้ว', 'success');
+      } catch {
+        showToast('กรุณากรอก URL ที่ถูกต้อง เช่น https://example.com', 'error');
+      }
+    };
+
+    window.downloadQRCode = function() {
+      const container = $('qrcode-container');
+      const canvas = container.querySelector('canvas');
+      const image = container.querySelector('img');
+      let dataUrl = null;
+
+      if (canvas) dataUrl = canvas.toDataURL('image/png');
+      else if (image && image.src) dataUrl = image.src;
+
+      if (!dataUrl) {
+        showToast('ยังไม่มี QR Code ให้บันทึก', 'error');
+        return;
+      }
+      const link = document.createElement('a');
+      link.download = 'FOG_Register_FreeSkin5_QR.png';
+      link.href = dataUrl;
+      link.click();
+      showToast('ดาวน์โหลดรูป QR Code สำเร็จ!', 'success');
+    };
+
+    window.copyQRLink = async function() {
+      const value = $('qr-url-input').value.trim();
+      try {
+        if (navigator.clipboard && window.isSecureContext) {
+          await navigator.clipboard.writeText(value);
+        } else {
+          const input = $('qr-url-input');
+          input.focus();
+          input.select();
+          const copied = document.execCommand('copy');
+          if (!copied) throw new Error('copy command failed');
+        }
+        showToast('คัดลอกลิงก์ลงทะเบียนเรียบร้อย!', 'success');
+      } catch (error) {
+        showToast('คัดลอกไม่สำเร็จ กรุณาคัดลอก URL จากช่องข้อความด้วยตนเอง', 'error');
+      }
+    };
+
+    document.querySelectorAll('.modal-backdrop').forEach(modal => {
+      modal.addEventListener('click', event => {
+        if (event.target === modal) window.closeModal(modal.id);
+      });
+    });
+    document.addEventListener('keydown', event => {
+      if (event.key === 'Escape') {
+        window.closeModal('qr-modal');
+      }
+    });
+
+    initFirebaseSystem();
+  </script>
+</body>
+</html>
